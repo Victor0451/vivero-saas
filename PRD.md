@@ -1,9 +1,9 @@
 # 📋 Product Requirements Document (PRD)
 ## Vivero SaaS - Sistema de Gestión para Viveros
 
-**Versión:** 1.2.0
+**Versión:** 1.3.0
 **Fecha:** Enero 2026
-**Estado:** Implementado (Fase 1 + Analytics + Notificaciones + PWA + Subgéneros Completos)
+**Estado:** Implementado (Fase 1 + Analytics + Notificaciones + PWA + Inventario Parcial)
 
 ---
 
@@ -221,6 +221,29 @@
 - ✅ Métricas relevantes para viveristas
 - ✅ Navegación intuitiva
 
+### 📦 RF-009: Gestión de Inventario
+**Prioridad:** Media
+**Estado:** ✅ Implementado (Parcial)
+
+**Descripción:**
+- Control de stock de materiales e insumos
+- Historial de movimientos (entradas/salidas)
+- Categorización de items
+- Integración con consumo en tareas
+
+**Funcionalidades Específicas:**
+- ✅ CRUD de items de inventario
+- ✅ Categorías personalizables
+- ✅ Registro de movimientos
+- ✅ Vinculación de consumo en formulario de tareas
+- ✅ Alertas visuales de stock bajo
+
+**Criterios de Aceptación:**
+- ✅ Stock se descuenta automáticamente al registrar consumo
+- ✅ Validación de stock suficiente
+- ✅ Historial inmutable de movimientos
+
+
 ---
 
 ## 🔧 Requerimientos No Funcionales
@@ -354,8 +377,8 @@
 - [ ] **Security testing** automatizado
 
 ### 🔄 Fase 3 - Características Avanzadas
-- [ ] **Sistema de inventario** (macetas, materiales)
-- [ ] **Upload de imágenes** para plantas
+- ✅ **Sistema de inventario** (macetas, materiales) - Implementado v1.3.0
+- [ ] **Upload de imágenes** para plantas (Mejoras pendientes)
 - [ ] **Reportes avanzados** con gráficos
 - [ ] **Notificaciones push** inteligentes
 - [ ] **API REST completa** para integraciones
@@ -477,4 +500,4 @@
 
 ---
 
-*Este PRD se actualiza conforme evoluciona el producto. Última actualización: Enero 2026 - v1.2.0 con PWA, Subgéneros y Mejoras en Macetas*
+*Este PRD se actualiza conforme evoluciona el producto. Última actualización: Enero 2026 - v1.3.0 con Gestión de Inventario e Integración de Tareas*

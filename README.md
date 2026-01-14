@@ -85,6 +85,15 @@ Una aplicación SaaS multi-tenant completa para la gestión integral de viveros,
 - **Indicador de conexión** con notificaciones de estado
 - **Prompt de instalación** con lógica de descarte (7 días)
 - **Manifest configurado** con iconos y shortcuts
+- **Nota:** Deshabilitado temporalmente en producción (v1.3.0) para optimización de builds
+
+### 📦 Gestión de Inventario ✨ **NUEVO v1.3.0**
+- **Control de existencias** de herramientas y materiales
+- **Movimientos de stock** (Entradas/Salidas/Ajustes)
+- **Integración con tareas** - Descuento automático al usar materiales
+- **Alertas de stock bajo** visuales y en dashboard
+- **Categorización** flexible de items
+
 
 ## 🛠️ Tecnologías Utilizadas
 

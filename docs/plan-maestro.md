@@ -128,7 +128,7 @@ Este documento contiene el roadmap completo de implementaciones y mejoras planif
 
 ---
 
-## 🔄 Fase 5 - Gestión de Inventario (PENDIENTE)
+## 🔄 Fase 5 - Gestión de Inventario (PARCIALMENTE COMPLETADO)
 
 ### Objetivos
 Implementar un sistema completo de gestión de inventario para materiales de jardinería, herramientas y suministros.
@@ -194,16 +194,16 @@ CREATE TABLE proveedores (
 ### Funcionalidades a Implementar
 
 #### Módulo de Inventario
-- [ ] Página de listado de items con filtros
-- [ ] Formulario de creación/edición de items
-- [ ] Vista de detalles con historial de movimientos
-- [ ] Gestión de categorías
-- [ ] Indicadores visuales de stock bajo
+- [x] Página de listado de items con filtros
+- [x] Formulario de creación/edición de items
+- [x] Vista de detalles con historial de movimientos
+- [x] Gestión de categorías
+- [x] Indicadores visuales de stock bajo
 
 #### Alertas de Stock
-- [ ] Configurar niveles mínimos por item
-- [ ] Notificaciones cuando stock < mínimo
-- [ ] Dashboard de items críticos
+- [x] Configurar niveles mínimos por item
+- [ ] Notificaciones automáticas cuando stock < mínimo
+- [x] Dashboard de items críticos (Widget básico implementado)
 - [ ] Sugerencias de reabastecimiento
 
 #### Módulo de Proveedores
@@ -213,9 +213,9 @@ CREATE TABLE proveedores (
 - [ ] Información de contacto y notas
 
 #### Integración con Tareas
-- [ ] Registrar consumo de materiales en tareas
-- [ ] Actualizar stock automáticamente
-- [ ] Reportes de consumo por período
+- [x] Registrar consumo de materiales en tareas
+- [x] Actualizar stock automáticamente
+- [x] Reportes de consumo por período (parcial en historial)
 - [ ] Costos asociados a tareas
 
 ### Estimación
