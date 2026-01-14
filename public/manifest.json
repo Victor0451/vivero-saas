@@ -1,0 +1,56 @@
+{
+    "name": "Vivero SaaS",
+    "short_name": "Vivero",
+    "description": "Sistema de gestión integral para viveros - Gestiona plantas, tareas, historial clínico y más",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#22c55e",
+    "orientation": "portrait-primary",
+    "scope": "/",
+    "icons": [
+        {
+            "src": "/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": [
+        "productivity",
+        "business"
+    ],
+    "screenshots": [],
+    "shortcuts": [
+        {
+            "name": "Plantas",
+            "short_name": "Plantas",
+            "description": "Ver y gestionar plantas",
+            "url": "/plantas",
+            "icons": [
+                {
+                    "src": "/icon-192x192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Tareas",
+            "short_name": "Tareas",
+            "description": "Ver y gestionar tareas",
+            "url": "/tareas",
+            "icons": [
+                {
+                    "src": "/icon-192x192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        }
+    ]
+}

@@ -17,8 +17,9 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Loader2 } from 'lucide-react'
-import type { PlantaConDetalles, TipoPlantaOption, GeneroPlantaOption, MacetaOption } from '@/types'
-import { createPlanta, updatePlanta, getTiposPlanta, getGenerosPlanta, getMacetas, seedGenerosPlanta, seedTiposPlanta, debugGenerosPlanta, poblarGenerosManual, diagnosticarQueries, poblarDatosPrueba } from '../app/actions/plantas'
+import type { PlantaConDetalles, TipoPlantaOption, GeneroPlantaOption, SubgeneroPlantaOption, MacetaOption } from '@/types'
+import { createPlanta, updatePlanta, getTiposPlanta, getGenerosPlanta, getMacetas, seedTiposPlanta, poblarGenerosManual, diagnosticarQueries, poblarDatosPrueba } from '../app/actions/plantas'
+import { getSubgenerosByGenero } from '../app/actions/subgeneros'
 import { showToast } from '@/lib/toast'
 import { PlantImageUpload } from './plant-image-upload'
 import { createClient } from '@/lib/supabase/client'
@@ -27,6 +28,7 @@ const plantaSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),
   id_tipo: z.number().min(1, 'El tipo es requerido'),
   id_genero: z.number().min(1, 'El género es requerido'),
+  id_subgenero: z.number().optional(),
   id_maceta: z.number().optional(),
   fecha_compra: z.string().optional(),
   fecha_transplante: z.string().optional(),
@@ -49,13 +51,14 @@ export function PlantaForm({ planta, onSuccess, onCancel }: PlantaFormProps) {
   const [loading, setLoading] = useState(false)
   const [tipos, setTipos] = useState<TipoPlantaOption[]>([])
   const [generos, setGeneros] = useState<GeneroPlantaOption[]>([])
+  const [subgeneros, setSubgeneros] = useState<SubgeneroPlantaOption[]>([])
   const [macetas, setMacetas] = useState<MacetaOption[]>([])
   const [loadingOptions, setLoadingOptions] = useState(true)
   const [showGenerosMessage, setShowGenerosMessage] = useState(false)
   const [tenantId, setTenantId] = useState<string>('')
 
   // Función para cargar todas las opciones
-  const loadOptions = async () => {
+  const loadOptions = React.useCallback(async () => {
     console.log('Cargando opciones del formulario...')
 
     try {
@@ -65,7 +68,7 @@ export function PlantaForm({ planta, onSuccess, onCancel }: PlantaFormProps) {
         await diagnosticarQueries()
       }
       // Cargar tipos, y si no hay, intentar poblar
-      let tiposData: any[] = []
+      let tiposData: TipoPlantaOption[] = []
       try {
         tiposData = await getTiposPlanta()
         console.log('Tipos obtenidos:', tiposData?.length || 0)
@@ -108,7 +111,7 @@ export function PlantaForm({ planta, onSuccess, onCancel }: PlantaFormProps) {
     } finally {
       setLoadingOptions(false)
     }
-  }
+  }, [loadingOptions])
 
   const isEditing = !!planta
 
@@ -124,6 +127,7 @@ export function PlantaForm({ planta, onSuccess, onCancel }: PlantaFormProps) {
       nombre: planta?.nombre || '',
       id_tipo: planta?.id_tipo || undefined,
       id_genero: planta?.id_genero || undefined,
+      id_subgenero: planta?.id_subgenero || undefined,
       id_maceta: planta?.id_maceta || undefined,
       fecha_compra: planta?.fecha_compra || '',
       fecha_transplante: planta?.fecha_transplante || '',
@@ -138,25 +142,27 @@ export function PlantaForm({ planta, onSuccess, onCancel }: PlantaFormProps) {
   const estaEnferma = watch('esta_enferma')
   const estaMuerta = watch('esta_muerta')
   const currentImageUrl = watch('image_url')
+  const selectedGenero = watch('id_genero')
 
+  // Cargar subgéneros cuando cambia el género
   useEffect(() => {
-    const initializeForm = async () => {
-      // Diagnóstico completo en desarrollo
-      if (process.env.NODE_ENV === 'development') {
-        console.log('=== INICIALIZANDO FORMULARIO ===')
-        console.log('Para diagnóstico detallado, visita: /debug')
-        console.log('O ejecuta en consola: poblarDatosPrueba()')
+    const loadSubgeneros = async () => {
+      if (selectedGenero) {
+        try {
+          const data = await getSubgenerosByGenero(selectedGenero)
+          setSubgeneros(data)
+        } catch (err) {
+          console.error('Error loading subgeneros:', err)
+          setSubgeneros([])
+        }
+      } else {
+        setSubgeneros([])
+        setValue('id_subgenero', undefined)
       }
-
-      // Cargar tenant ID y opciones
-      await Promise.all([
-        loadTenantId(),
-        loadOptions()
-      ])
     }
+    loadSubgeneros()
+  }, [selectedGenero, setValue])
 
-    initializeForm()
-  }, [])
 
   const recargarGeneros = async () => {
     const generosData = await getGenerosPlanta()
@@ -164,7 +170,7 @@ export function PlantaForm({ planta, onSuccess, onCancel }: PlantaFormProps) {
     setShowGenerosMessage(!generosData || generosData.length === 0)
   }
 
-  const loadTenantId = async () => {
+  const loadTenantId = React.useCallback(async () => {
     try {
       const supabase = createClient()
       const { data: authData, error: authError } = await supabase.auth.getUser()
@@ -188,7 +194,27 @@ export function PlantaForm({ planta, onSuccess, onCancel }: PlantaFormProps) {
     } catch (error) {
       console.error('Error cargando tenant ID:', error)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    const initializeForm = async () => {
+      // Diagnóstico completo en desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        console.log('=== INICIALIZANDO FORMULARIO ===')
+        console.log('Para diagnóstico detallado, visita: /debug')
+        console.log('O ejecuta en consola: poblarDatosPrueba()')
+      }
+
+      // Cargar tenant ID y opciones
+      await Promise.all([
+        loadTenantId(),
+        loadOptions()
+      ])
+    }
+
+    initializeForm()
+  }, [loadOptions, loadTenantId])
+
 
   const poblarGeneros = async () => {
     try {
@@ -219,27 +245,29 @@ export function PlantaForm({ planta, onSuccess, onCancel }: PlantaFormProps) {
   // Función global para debug desde consola
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).poblarDatosPrueba = async () => {
         console.log('=== EJECUTANDO POBLAR DATOS DE PRUEBA ===')
         try {
           const result = await poblarDatosPrueba()
           console.log('Resultado:', result)
           return result
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('Error:', error)
-          return { error: error.message || 'Error desconocido' }
+          return { error: error instanceof Error ? error.message : 'Error desconocido' }
         }
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).diagnosticarQueries = async () => {
         console.log('=== EJECUTANDO DIAGNÓSTICO ===')
         try {
           const result = await diagnosticarQueries()
           console.log('Resultado diagnóstico:', result)
           return result
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('Error diagnóstico:', error)
-          return { error: error.message || 'Error desconocido' }
+          return { error: error instanceof Error ? error.message : 'Error desconocido' }
         }
       }
     }
@@ -325,7 +353,10 @@ export function PlantaForm({ planta, onSuccess, onCancel }: PlantaFormProps) {
           <Label htmlFor="id_genero">Género *</Label>
           <Select
             value={watch('id_genero')?.toString() || ''}
-            onValueChange={(value) => setValue('id_genero', parseInt(value))}
+            onValueChange={(value) => {
+              setValue('id_genero', parseInt(value))
+              setValue('id_subgenero', undefined) // Limpiar subgénero al cambiar género
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder="Seleccionar género" />
@@ -346,6 +377,11 @@ export function PlantaForm({ planta, onSuccess, onCancel }: PlantaFormProps) {
           </Select>
           {errors.id_genero && (
             <p className="text-sm text-red-500">{errors.id_genero.message}</p>
+          )}
+          {!errors.id_genero && generos.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Clasificación principal de la planta
+            </p>
           )}
           {showGenerosMessage && (
             <div className="text-sm text-muted-foreground space-y-1">
@@ -389,6 +425,42 @@ export function PlantaForm({ planta, onSuccess, onCancel }: PlantaFormProps) {
             </div>
           )}
         </div>
+
+        {/* Subgénero (opcional) */}
+        {selectedGenero && subgeneros.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="id_subgenero">Subgénero (opcional)</Label>
+              <span className="text-xs text-muted-foreground">
+                {subgeneros.length} disponible{subgeneros.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+            <Select
+              value={watch('id_subgenero')?.toString() || 'none'}
+              onValueChange={(value) => setValue('id_subgenero', value === 'none' ? undefined : parseInt(value))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar subgénero" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Sin subgénero</SelectItem>
+                {subgeneros.map((subgenero) => (
+                  <SelectItem key={subgenero.id_subgenero} value={subgenero.id_subgenero.toString()}>
+                    {subgenero.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Subcategoría específica dentro del género seleccionado
+            </p>
+          </div>
+        )}
+        {selectedGenero && subgeneros.length === 0 && (
+          <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-md">
+            💡 No hay subgéneros para este género. Puedes crear uno en Catálogos → Géneros
+          </div>
+        )}
       </div>
 
       {/* Maceta */}

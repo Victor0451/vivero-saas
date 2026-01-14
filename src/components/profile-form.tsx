@@ -64,6 +64,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
           showToast.error(result.message || 'Error al actualizar el perfil')
         }
       } catch (error) {
+        console.error('Error updating profile:', error)
         showToast.error('Error inesperado al actualizar el perfil')
       }
     })
@@ -85,6 +86,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
         showToast.error(result.message || 'Error al actualizar el avatar')
       }
     } catch (error) {
+      console.error('Error uploading avatar:', error)
       showToast.error('Error inesperado al subir el avatar')
     } finally {
       setIsUploading(false)

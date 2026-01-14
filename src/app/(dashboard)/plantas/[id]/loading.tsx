@@ -1,7 +1,5 @@
 import { Skeleton } from '@/components/ui/skeleton'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { ArrowLeft } from 'lucide-react'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 
 export default function PlantaDetailLoading() {
   return (

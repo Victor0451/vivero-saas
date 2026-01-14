@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import {
   Table,
   TableBody,
@@ -11,7 +10,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { MoreHorizontal, Pencil, Trash2, Sprout } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +20,6 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/empty-state'
 import { ConfirmDialog } from '@/components/confirm-dialog'
-import { MoreHorizontal, Pencil, Trash2, Sprout } from 'lucide-react'
 import { showToast } from '@/lib/toast'
 import type { GeneroPlanta } from '@/types'
 import { deleteGenero } from '../app/actions/plantas'
@@ -68,9 +66,6 @@ export function GenerosTable({ generos, loading, error, onEdit, onRefresh }: Gen
     }
   }
 
-  const handleDeleteCancel = () => {
-    setConfirmDelete({ open: false, id: null, nombre: '' })
-  }
 
   if (loading) {
     return (

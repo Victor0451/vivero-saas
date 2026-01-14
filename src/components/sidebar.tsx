@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import {
   LayoutDashboard,
   Sprout,
@@ -16,11 +15,20 @@ import {
   FolderOpen,
   Flower2,
   Box,
-  User
+  User,
+  Package,
+  LucideIcon
 } from 'lucide-react'
 import { useState } from 'react'
 
-const navigation = [
+interface NavigationItem {
+  name: string
+  href: string
+  icon: LucideIcon
+  children?: NavigationItem[]
+}
+
+const navigation: NavigationItem[] = [
   {
     name: 'Dashboard',
     href: '/dashboard',
@@ -30,6 +38,11 @@ const navigation = [
     name: 'Plantas',
     href: '/plantas',
     icon: Sprout,
+  },
+  {
+    name: 'Inventario',
+    href: '/inventario',
+    icon: Package,
   },
   {
     name: 'Catálogos',
@@ -96,9 +109,9 @@ export function Sidebar({ className }: SidebarProps) {
 
   const isMenuExpanded = (menuName: string) => expandedMenus.includes(menuName)
 
-  const isMenuActive = (item: any) => {
+  const isMenuActive = (item: NavigationItem) => {
     if (item.children) {
-      return item.children.some((child: any) =>
+      return item.children.some((child) =>
         pathname === child.href || pathname.startsWith(child.href + '/')
       )
     }
@@ -168,7 +181,7 @@ export function Sidebar({ className }: SidebarProps) {
 
                 {!collapsed && isMenuExpanded(item.name) && (
                   <div className="ml-6 mt-1 space-y-1">
-                    {item.children.map((child: any) => {
+                    {item.children.map((child) => {
                       const isChildActive = pathname === child.href || pathname.startsWith(child.href + '/')
                       return (
                         <Link key={child.name} href={child.href}>
@@ -215,7 +228,7 @@ export function Sidebar({ className }: SidebarProps) {
       <div className="p-4 border-t">
         {!collapsed && (
           <div className="text-xs text-muted-foreground">
-            <p>Vivero SaaS v1.0</p>
+            <p>Vivero SaaS v1.3</p>
             <p className="mt-1">Sistema de gestión</p>
           </div>
         )}

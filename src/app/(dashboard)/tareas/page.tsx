@@ -7,14 +7,15 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { PageHeader } from '@/components/page-header'
 import { EmptyState } from '@/components/empty-state'
-import { LoadingSpinner } from '@/components/loading-spinner'
-import { Plus, CheckSquare, Clock, Filter, Calendar, Sprout } from 'lucide-react'
+import { Plus, CheckSquare, Clock, Filter, Calendar, Sprout, Package } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { getTareas, toggleTareaCompletada } from '@/app/actions/plantas'
+import { getItems } from '@/app/actions/inventario'
 import { showToast } from '@/lib/toast'
 import { TareaSheet } from '@/components/tarea-sheet'
-import type { Tarea } from '@/types'
+import { MaterialConsumoDialog } from '@/components/material-consumo-dialog'
+import type { Tarea, ItemInventarioConDetalles } from '@/types'
 
 // Tipos extendidos para mostrar información de plantas relacionadas
 type TareaConPlanta = Tarea & {
@@ -29,19 +30,23 @@ export default function TareasPage() {
   const [tareas, setTareas] = useState<TareaConPlanta[]>([])
   const [filter, setFilter] = useState<FilterType>('all')
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editingTarea, setEditingTarea] = useState<Tarea | null>(null)
+  const [materialDialogOpen, setMaterialDialogOpen] = useState(false)
+  const [selectedTarea, setSelectedTarea] = useState<TareaConPlanta | null>(null)
+  const [items, setItems] = useState<ItemInventarioConDetalles[]>([])
 
   const loadTareas = async () => {
     try {
       setIsLoading(true)
-      setError(null)
-      const data = await getTareas()
-      setTareas(data)
+      const [tareasData, itemsData] = await Promise.all([
+        getTareas(),
+        getItems()
+      ])
+      setTareas(tareasData)
+      setItems(itemsData)
     } catch (err) {
       console.error('Error loading tareas:', err)
-      setError('Error al cargar las tareas')
       showToast.error('Error al cargar las tareas')
     } finally {
       setIsLoading(false)
@@ -87,7 +92,7 @@ export default function TareasPage() {
         ))
         showToast.error(result.message)
       }
-    } catch (error) {
+    } catch {
       // Revert optimistic update on error
       setTareas(prev => prev.map(t =>
         t.id_tarea === id
@@ -103,12 +108,16 @@ export default function TareasPage() {
     setSheetOpen(true)
   }
 
-  const handleEdit = (tarea: Tarea) => {
-    setEditingTarea(tarea)
-    setSheetOpen(true)
+  const handleSuccess = () => {
+    loadTareas()
   }
 
-  const handleSuccess = () => {
+  const handleRegisterMaterials = (tarea: TareaConPlanta) => {
+    setSelectedTarea(tarea)
+    setMaterialDialogOpen(true)
+  }
+
+  const handleMaterialSuccess = () => {
     loadTareas()
   }
 
@@ -215,8 +224,8 @@ export default function TareasPage() {
                 <div
                   key={tarea.id_tarea}
                   className={`flex items-center space-x-4 p-4 rounded-lg border transition-all hover:shadow-sm ${tarea.completada
-                      ? 'bg-muted/50 border-muted'
-                      : 'bg-card border-border'
+                    ? 'bg-muted/50 border-muted'
+                    : 'bg-card border-border'
                     }`}
                 >
                   <Checkbox
@@ -250,6 +259,15 @@ export default function TareasPage() {
                       )}
                     </div>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRegisterMaterials(tarea)}
+                    className="text-muted-foreground hover:text-foreground"
+                    title="Registrar materiales consumidos"
+                  >
+                    <Package className="h-4 w-4" />
+                  </Button>
                 </div>
               ))}
             </div>
@@ -263,6 +281,17 @@ export default function TareasPage() {
         tarea={editingTarea}
         onSuccess={handleSuccess}
       />
+
+      {selectedTarea && (
+        <MaterialConsumoDialog
+          open={materialDialogOpen}
+          onOpenChange={setMaterialDialogOpen}
+          idTarea={selectedTarea.id_tarea}
+          tituloTarea={selectedTarea.titulo}
+          items={items}
+          onSuccess={handleMaterialSuccess}
+        />
+      )}
     </div>
   )
 }

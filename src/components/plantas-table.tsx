@@ -23,7 +23,6 @@ import { EmptyState } from '@/components/empty-state'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { MoreHorizontal, Pencil, Trash2, Sprout, CheckSquare, Stethoscope, Calendar, Flower } from 'lucide-react'
 import { showToast } from '@/lib/toast'
-import { format } from 'date-fns'
 import type { PlantaConDetalles } from '@/types'
 import { softDeletePlanta } from '../app/actions/plantas'
 
@@ -68,9 +67,6 @@ const PlantasTableComponent = ({ plantas, loading, error, onEdit, onRefresh, onC
     }
   }, [confirmDelete.id, onRefresh])
 
-  const handleDeleteCancel = useCallback(() => {
-    setConfirmDelete({ open: false, id: null, nombre: '' })
-  }, [])
 
   const getEstadoBadge = (planta: PlantaConDetalles) => {
     if (planta.esta_muerta) {
@@ -147,7 +143,7 @@ const PlantasTableComponent = ({ plantas, loading, error, onEdit, onRefresh, onC
 
   return (
     <div className="rounded-md border">
-        <Table>
+      <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Nombre</TableHead>

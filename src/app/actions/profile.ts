@@ -107,7 +107,7 @@ export async function uploadAvatar(formData: FormData) {
     const fileName = `${user.id}/avatar.webp`
 
     // Subir archivo al bucket user-avatars
-    const { data, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('user-avatars')
       .upload(fileName, processedFile, {
         cacheControl: '3600',

@@ -67,9 +67,6 @@ export function MacetasTable({ macetas, loading, error, onEdit, onRefresh }: Mac
     }
   }
 
-  const handleDeleteCancel = () => {
-    setConfirmDelete({ open: false, id: null, nombre: '' })
-  }
 
   if (loading) {
     return (
@@ -157,13 +154,13 @@ export function MacetasTable({ macetas, loading, error, onEdit, onRefresh }: Mac
               <TableCell>
                 <div className="text-sm">
                   {maceta.diametro_cm && (
-                    <span>Ø{maceta.diametro_cm}cm</span>
+                    <span>Ø{maceta.diametro_cm}{maceta.diametro_unidad || 'cm'}</span>
                   )}
                   {maceta.diametro_cm && maceta.altura_cm && (
                     <span> × </span>
                   )}
                   {maceta.altura_cm && (
-                    <span>{maceta.altura_cm}cm alto</span>
+                    <span>{maceta.altura_cm}{maceta.altura_unidad || 'cm'} alto</span>
                   )}
                   {!maceta.diametro_cm && !maceta.altura_cm && (
                     <span className="text-muted-foreground">No especificadas</span>
@@ -173,7 +170,7 @@ export function MacetasTable({ macetas, loading, error, onEdit, onRefresh }: Mac
               <TableCell>
                 {maceta.volumen_lts ? (
                   <span className="text-sm font-medium">
-                    {maceta.volumen_lts}L
+                    {maceta.volumen_lts}{maceta.volumen_unidad || 'L'}
                   </span>
                 ) : (
                   <span className="text-muted-foreground">N/A</span>

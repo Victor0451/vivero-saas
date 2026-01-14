@@ -1,10 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PageHeader } from '@/components/page-header'
-import { StatusBadge } from '@/components/status-badge'
-import { LoadingSpinner } from '@/components/loading-spinner'
+import { AnalyticsSection } from '@/components/dashboard/analytics-section'
+import { InventoryWidget } from '@/components/dashboard/inventory-widget'
 import { Sprout, AlertTriangle, CheckCircle, Clock } from 'lucide-react'
 import Link from 'next/link'
+import {
+  getPlantHealthTrends,
+  getPlantDistributionByGenre,
+  getTaskCompletionRate
+} from '@/app/actions/analytics'
 
 
 async function getDashboardStats() {
@@ -46,6 +51,13 @@ async function getDashboardStats() {
 
 export default async function DashboardPage() {
   const { plantasStats, tareasStats } = await getDashboardStats()
+
+  // Get analytics data
+  const [healthTrends, plantDistribution, taskCompletion] = await Promise.all([
+    getPlantHealthTrends(),
+    getPlantDistributionByGenre(),
+    getTaskCompletionRate()
+  ])
 
   return (
     <div className="space-y-8">
@@ -110,7 +122,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card className="transition-all hover:shadow-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -123,13 +135,13 @@ export default async function DashboardPage() {
               Administra tu colección de plantas, registra nuevas especies y mantén un seguimiento de su estado de salud.
             </p>
             <div className="flex gap-2">
-              <Link href="/dashboard/plantas">
+              <Link href="/plantas">
                 <Card className="p-3 cursor-pointer hover:bg-accent transition-colors">
                   <div className="text-sm font-medium">Ver Plantas</div>
                   <div className="text-xs text-muted-foreground">Gestionar colección</div>
                 </Card>
               </Link>
-              <Link href="/dashboard/plantas/new">
+              <Link href="/plantas/new">
                 <Card className="p-3 cursor-pointer hover:bg-accent transition-colors">
                   <div className="text-sm font-medium">Nueva Planta</div>
                   <div className="text-xs text-muted-foreground">Agregar especie</div>
@@ -150,7 +162,7 @@ export default async function DashboardPage() {
             <p className="text-sm text-muted-foreground">
               Organiza y sigue el progreso de las tareas de mantenimiento, riego y cuidado de tus plantas.
             </p>
-            <Link href="/dashboard/tareas">
+            <Link href="/tareas">
               <Card className="p-3 cursor-pointer hover:bg-accent transition-colors">
                 <div className="text-sm font-medium">Ver Tareas</div>
                 <div className="text-xs text-muted-foreground">Gestionar actividades</div>
@@ -158,8 +170,17 @@ export default async function DashboardPage() {
             </Link>
           </CardContent>
         </Card>
+
+        {/* Inventory Widget */}
+        <InventoryWidget />
       </div>
 
+      {/* Analytics Section */}
+      <AnalyticsSection
+        initialHealthTrends={healthTrends}
+        initialTaskCompletion={taskCompletion}
+        initialPlantDistribution={plantDistribution}
+      />
 
     </div>
   )

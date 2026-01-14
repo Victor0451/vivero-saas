@@ -26,7 +26,10 @@ Una aplicación SaaS multi-tenant completa para la gestión integral de viveros,
 
 ### 📂 Catálogos de Referencia
 - **Géneros de plantas** - CRUD completo con descripciones opcionales
-- **Macetas disponibles** - Gestión de tipos, materiales y dimensiones
+- **Subgéneros de plantas** - Clasificación jerárquica bajo géneros ✨ **NUEVO v1.2.0**
+- **Creación rápida** - Dialog para crear género + subgénero en un paso ✨ **NUEVO v1.2.0**
+- **Macetas disponibles** - Gestión con unidades configurables (cm/in/mm, L/ml/gal) ✨ **NUEVO v1.2.0**
+- **Materiales estandarizados** - Select con opciones predefinidas ✨ **NUEVO v1.2.0**
 - **Catálogos multi-tenant** - Datos específicos por vivero
 - **Validaciones robustas** en todos los campos
 
@@ -75,6 +78,14 @@ Una aplicación SaaS multi-tenant completa para la gestión integral de viveros,
 - **Protección de rutas** con middleware
 - **Validaciones de formularios** en tiempo real
 
+### 📱 PWA (Progressive Web App) ✨ **NUEVO v1.2.0**
+- **Aplicación instalable** en dispositivos móviles y desktop
+- **Funcionamiento offline** con estrategias de caché inteligentes
+- **Service Worker** optimizado para Supabase, imágenes y fuentes
+- **Indicador de conexión** con notificaciones de estado
+- **Prompt de instalación** con lógica de descarte (7 días)
+- **Manifest configurado** con iconos y shortcuts
+
 ## 🛠️ Tecnologías Utilizadas
 
 ### Frontend
@@ -94,6 +105,11 @@ Una aplicación SaaS multi-tenant completa para la gestión integral de viveros,
 - **Supabase Auth** - Autenticación segura
 - **Supabase Storage** - Gestión de archivos (futuro)
 - **Row Level Security** - Aislamiento de datos multi-tenant
+
+### PWA & Offline
+- **next-pwa** - Progressive Web App support
+- **Service Worker** - Estrategias de caché optimizadas
+- **Workbox** - Gestión avanzada de caché
 
 ### Testing & Calidad
 - **Jest + Testing Library** - Framework de testing completo
@@ -146,10 +162,13 @@ The application expects the following tables (already existing):
 - users
 - tipos_planta
 - generos_planta
-- macetas
-- plantas
+- **subgeneros_planta** ✨ **NUEVO v1.2.0**
+- macetas (con columnas de unidades) ✨ **ACTUALIZADO v1.2.0**
+- plantas (con id_subgenero opcional) ✨ **ACTUALIZADO v1.2.0**
 - historia_clinica
 - tareas
+- notificaciones ✨ **NUEVO v1.1.0**
+- preferencias_notificaciones ✨ **NUEVO v1.1.0**
 
 Ensure RLS is enabled and policies are set to filter by tenant.
 
@@ -409,11 +428,15 @@ erDiagram
 - [x] **Gestión completa de plantas** con estados de salud ✅
 - [x] **Sistema de tareas avanzado** con filtros dinámicos ✅
 - [x] **Historial clínico integral** con tratamientos ✅
-- [x] **Catálogos completos** - Géneros y macetas ✅
+- [x] **Catálogos completos** - Géneros, Subgéneros y Macetas ✅
 - [x] **Perfil de usuario** con avatar y gestión personal ✅
 - [x] **Testing completo** - 27 tests automatizados ✅
 - [x] **CI/CD pipeline** con GitHub Actions ✅
 - [x] **Build limpio** sin errores de TypeScript ✅
+- [x] **Dashboard con Analytics** - Gráficos y métricas ✅ v1.1.0
+- [x] **Sistema de Notificaciones** - In-app con preferencias ✅ v1.1.0
+- [x] **PWA Completo** - Instalable y offline ✅ v1.2.0
+- [x] **Subgéneros** - Clasificación jerárquica ✅ v1.2.0
 
 ### 🚀 **Fase 2 - Testing & Calidad Avanzada**
 - [ ] **Tests E2E** con Playwright/Cypress
@@ -424,11 +447,11 @@ erDiagram
 
 ### 🚀 **Fase 3 - Características Avanzadas**
 - [ ] **Sistema de inventario** - Gestión avanzada de materiales
-- [ ] **Upload de imágenes** para plantas
-- [ ] **Reportes avanzados** con gráficos y analytics
-- [ ] **Notificaciones push** inteligentes
+- [x] **Upload de imágenes** para plantas ✅ (Implementado)
+- [x] **Reportes avanzados** con gráficos y analytics ✅ v1.1.0
+- [x] **Notificaciones inteligentes** ✅ v1.1.0
 - [ ] **API REST completa** para integraciones
-- [ ] **Dashboard avanzado** con métricas detalladas
+- [x] **Dashboard avanzado** con métricas detalladas ✅ v1.1.0
 
 ### 🚀 **Fase 4 - IA y Automatización**
 - [ ] **Recomendaciones inteligentes** - Cuidado basado en datos

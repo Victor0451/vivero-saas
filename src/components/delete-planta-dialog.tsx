@@ -58,7 +58,7 @@ export function DeletePlantaDialog({ open, onOpenChange, planta, onSuccess }: De
         <AlertDialogHeader>
           <AlertDialogTitle>¿Eliminar planta?</AlertDialogTitle>
           <AlertDialogDescription>
-            ¿Estás seguro de que quieres eliminar la planta "{planta?.nombre}"?
+            ¿Estás seguro de que quieres eliminar la planta &ldquo;{planta?.nombre}&rdquo;?
             Esta acción no se puede deshacer.
           </AlertDialogDescription>
         </AlertDialogHeader>

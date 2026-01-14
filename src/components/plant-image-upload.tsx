@@ -90,6 +90,7 @@ export function PlantImageUpload({
       }
     } catch (error) {
       showToast.dismiss(loadingToast)
+      console.error('Error uploading image:', error)
       // Revertir al estado anterior en caso de error
       if (objectUrl) {
         URL.revokeObjectURL(objectUrl)
@@ -140,6 +141,7 @@ export function PlantImageUpload({
       }
     } catch (error) {
       showToast.dismiss(loadingToast)
+      console.error('Error deleting image:', error)
       showToast.error('Error inesperado al eliminar la imagen')
     }
   }, [previewUrl, onChange])

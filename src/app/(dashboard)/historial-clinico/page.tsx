@@ -12,7 +12,6 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { getHistoriaClinicaByPlanta, getPlantas } from '@/app/actions/plantas'
 import { showToast } from '@/lib/toast'
-import { HistoriaClinicaList } from '@/components/historia-clinica-list'
 import { HistoriaClinicaSheet } from '@/components/historia-clinica-sheet'
 import type { HistoriaClinica, Planta } from '@/types'
 

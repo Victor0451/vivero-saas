@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import type { Planta, PlantaConDetalles, Tarea, HistoriaClinica, GeneroPlanta, Maceta } from '@/types'
+import type { PlantaConDetalles, Tarea, HistoriaClinica, GeneroPlanta, Maceta } from '@/types'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -34,13 +34,13 @@ export async function getPlantas(): Promise<PlantaConDetalles[]> {
 
   try {
     // Primero probar query básica
-    const { data: basicData, error: basicError } = await supabase
+    const { error: basicError } = await supabase
       .from('plantas')
       .select('*')
       .limit(1)
 
     if (basicError) {
-      throw new Error(`Error básico en plantas: ${basicError.message}`)
+      console.warn('Advertencia en diagnóstico inicial de plantas:', basicError.message)
     }
 
     // Query con joins
@@ -98,11 +98,13 @@ export async function getPlantaById(id: number): Promise<PlantaConDetalles | nul
       .single()
 
     if (error) {
+      console.error('Error fetching planta by id:', error)
       throw new Error('Error al obtener la planta')
     }
 
     return data
   } catch (error) {
+    console.error('Exception in getPlantaById:', error)
     throw new Error('Error al obtener la planta')
   }
 }
@@ -325,11 +327,12 @@ export async function seedTiposPlanta() {
           results.push(data[0])
         }
       } catch (err) {
+        console.error('Error seeding tipo:', err)
       }
     }
 
     return { success: true, message: `Se procesaron ${results.length} tipos de planta de ejemplo` }
-  } catch (error) {
+  } catch {
     // No lanzar error, solo loggear - los tipos pueden ya existir
     return { success: true, message: 'Tipos de planta ya configurados' }
   }
@@ -350,7 +353,7 @@ export async function getGenerosPlanta() {
     }
 
     return data || []
-  } catch (error) {
+  } catch {
     // No lanzar error, devolver array vacío
     return []
   }
@@ -371,7 +374,7 @@ export async function poblarDatosPrueba() {
 
     // 2. Obtener tenant del usuario
     // Ver todos los usuarios primero
-    const { data: allUsers, error: allUsersError } = await supabase
+    const { data: allUsers } = await supabase
       .from('users')
       .select('id_user, id_tenant')
 
@@ -391,10 +394,10 @@ export async function poblarDatosPrueba() {
     const tenantId = userData.id_tenant
 
     // 2. Poblar tipos (globales)
-    const tiposResult = await seedTiposPlanta()
+    await seedTiposPlanta()
 
     // 3. Poblar géneros (por tenant)
-    const generosResult = await seedGenerosPlanta()
+    await seedGenerosPlanta()
 
     // 4. Poblar macetas (por tenant)
     const macetasData = [
@@ -408,7 +411,7 @@ export async function poblarDatosPrueba() {
       id_tenant: tenantId
     }))
 
-    const { data: macetasInsert, error: macetasError } = await supabase
+    const { data: macetasInsert } = await supabase
       .from('macetas')
       .upsert(macetasConTenant, { onConflict: 'id_maceta' })
       .select()
@@ -456,7 +459,7 @@ export async function poblarDatosPrueba() {
       id_tenant: tenantId
     }))
 
-    const { data: plantasInsert, error: plantasError } = await supabase
+    const { data: plantasInsert } = await supabase
       .from('plantas')
       .insert(plantasConTenant)
       .select()
@@ -514,12 +517,11 @@ export async function probarConsultasBasicas() {
   }
 }
 
-// Función para poblar géneros manualmente (llamar desde consola del navegador)
 export async function poblarGenerosManual() {
   const result = await seedGenerosPlanta()
 
   // Recargar géneros después del seed
-  const generos = await getGenerosPlanta()
+  await getGenerosPlanta()
 
   return result
 }
@@ -527,7 +529,15 @@ export async function poblarGenerosManual() {
 // Función de diagnóstico completa para todas las queries
 export async function diagnosticarQueries() {
   const supabase = await createClient()
-  const results: any = {
+  const results: {
+    usuario: any;
+    plantas: any;
+    tipos: any;
+    generos: any;
+    macetas: any;
+    joins: any;
+    errores: any[];
+  } = {
     usuario: null,
     plantas: null,
     tipos: null,
@@ -622,26 +632,31 @@ export async function debugGenerosPlanta() {
 
   try {
     // Verificar usuario y tenant
-    const { data: userData, error: userError } = await supabase
+    await supabase
       .from('users')
       .select('id_user, id_tenant')
       .single()
 
     // Verificar géneros sin filtro
-    const { data: allGeneros, error: allError } = await supabase
+    await supabase
       .from('generos_planta')
       .select('*')
 
     // Verificar géneros con filtro específico
+    const { data: userData } = await supabase
+      .from('users')
+      .select('id_tenant')
+      .single()
+
     if (userData?.id_tenant) {
-      const { data: tenantGeneros, error: tenantError } = await supabase
+      await supabase
         .from('generos_planta')
         .select('*')
         .eq('id_tenant', userData.id_tenant)
     }
 
     return { success: true, message: 'Operación completada' }
-  } catch (error) {
+  } catch {
     return { success: false, message: 'Error en la operación' }
   }
 }
@@ -670,7 +685,7 @@ export async function seedGenerosPlanta() {
     }
 
     // Verificar si existe la tabla users
-    const { data: usersTableCheck, error: usersTableError } = await supabase
+    const { error: usersTableError } = await supabase
       .from('users')
       .select('*')
       .limit(1)
@@ -681,7 +696,7 @@ export async function seedGenerosPlanta() {
 
     // Buscar el registro del usuario actual
     // Primero intentar sin filtro para ver todos los usuarios
-    const { data: allUsers, error: allUsersError } = await supabase
+    const { data: allUsers } = await supabase
       .from('users')
       .select('id_user, id_tenant')
 
@@ -693,12 +708,6 @@ export async function seedGenerosPlanta() {
       .single()
 
     if (userError || !userData) {
-      // Si falla la consulta específica, intentar con una consulta más amplia
-      const { data: userByEmail, error: emailError } = await supabase
-        .from('users')
-        .select('id_user, id_tenant')
-        .eq('id_user', authData.user.id)
-
       return {
         success: false,
         message: `Usuario no registrado. Total usuarios en tabla: ${allUsers?.length || 0}. Error: ${userError?.message || 'Usuario no encontrado'}`
@@ -706,7 +715,7 @@ export async function seedGenerosPlanta() {
     }
 
     // Verificar si ya existen géneros para este tenant
-    const { data: existing, error: checkError } = await supabase
+    const { data: existing } = await supabase
       .from('generos_planta')
       .select('id_genero, nombre')
       .eq('id_tenant', userData.id_tenant)
@@ -803,7 +812,7 @@ export async function getTareaById(id: number): Promise<Tarea | null> {
   }
 }
 
-export async function createTarea(data: CreateTareaData): Promise<ActionResponse> {
+export async function createTarea(data: CreateTareaData): Promise<ActionResponse<Tarea>> {
   const supabase = await createClient()
 
   try {
@@ -829,7 +838,7 @@ export async function createTarea(data: CreateTareaData): Promise<ActionResponse
       }
     }
 
-    const { error } = await supabase
+    const { data: tarea, error } = await supabase
       .from('tareas')
       .insert({
         titulo: data.titulo,
@@ -839,6 +848,8 @@ export async function createTarea(data: CreateTareaData): Promise<ActionResponse
         id_tenant: userData.id_tenant,
         completada: false,
       })
+      .select()
+      .single()
 
     if (error) {
       console.error('Error de Supabase al crear tarea:', error)
@@ -848,11 +859,13 @@ export async function createTarea(data: CreateTareaData): Promise<ActionResponse
       }
     }
 
-    revalidatePath('/tareas', 'page')
-    revalidatePath('/dashboard', 'page')
+    revalidatePath('/tareas')
+    revalidatePath('/dashboard')
+
     return {
       success: true,
-      message: 'Tarea creada exitosamente'
+      message: 'Tarea creada exitosamente',
+      data: tarea
     }
   } catch (error: unknown) {
     console.error('Error en createTarea:', error)

@@ -16,9 +16,9 @@ jest.mock('@/components/page-header', () => ({
 }))
 
 jest.mock('@/components/profile-form', () => ({
-  ProfileForm: ({ initialData }: { initialData: any }) => (
+  ProfileForm: ({ initialData }: { initialData: unknown }) => (
     <div data-testid="profile-form">
-      <p>Profile Form for {initialData.nombre}</p>
+      <p>Profile Form for {(initialData as { nombre: string }).nombre}</p>
     </div>
   ),
 }))

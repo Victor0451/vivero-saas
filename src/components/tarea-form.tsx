@@ -15,11 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Package, Plus, Trash2 } from 'lucide-react'
 import { format } from 'date-fns'
-import type { Tarea, Planta } from '@/types'
+import type { Tarea, Planta, ItemInventarioConDetalles } from '@/types'
 import { createTarea, updateTarea, getPlantas } from '@/app/actions/plantas'
+import { getItems } from '@/app/actions/inventario'
+import { registrarConsumoTarea, type ConsumoMaterial } from '@/app/actions/inventario-tareas'
 import { showToast } from '@/lib/toast'
+import { Checkbox } from '@/components/ui/checkbox'
 
 const tareaSchema = z.object({
   titulo: z.string()
@@ -52,6 +55,14 @@ interface TareaFormProps {
 export function TareaForm({ tarea, defaultPlantaId, onSuccess, onCancel }: TareaFormProps) {
   const [loading, setLoading] = useState(false)
   const [plantas, setPlantas] = useState<Planta[]>([])
+  const [itemsInventario, setItemsInventario] = useState<ItemInventarioConDetalles[]>([])
+  const [showMateriales, setShowMateriales] = useState(false)
+  const [materialesSeleccionados, setMaterialesSeleccionados] = useState<Array<{
+    id: string
+    id_item: string
+    cantidad: string
+    motivo: string
+  }>>([{ id: '1', id_item: '', cantidad: '', motivo: '' }])
 
   const {
     register,
@@ -75,10 +86,12 @@ export function TareaForm({ tarea, defaultPlantaId, onSuccess, onCancel }: Tarea
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [plantasData] = await Promise.all([
-          getPlantas()
+        const [plantasData, itemsData] = await Promise.all([
+          getPlantas(),
+          getItems()
         ])
         setPlantas(plantasData)
+        setItemsInventario(itemsData)
       } catch (error) {
         console.error('Error loading data:', error)
       }
@@ -105,8 +118,55 @@ export function TareaForm({ tarea, defaultPlantaId, onSuccess, onCancel }: Tarea
     }
   }, [tarea, defaultPlantaId, reset])
 
+  const handleAddMaterial = () => {
+    const newId = (Math.max(...materialesSeleccionados.map(m => parseInt(m.id))) + 1).toString()
+    setMaterialesSeleccionados([
+      ...materialesSeleccionados,
+      { id: newId, id_item: '', cantidad: '', motivo: '' }
+    ])
+  }
+
+  const handleRemoveMaterial = (id: string) => {
+    if (materialesSeleccionados.length > 1) {
+      setMaterialesSeleccionados(materialesSeleccionados.filter(m => m.id !== id))
+    }
+  }
+
+  const handleMaterialChange = (id: string, field: keyof typeof materialesSeleccionados[0], value: string) => {
+    setMaterialesSeleccionados(materialesSeleccionados.map(m =>
+      m.id === id ? { ...m, [field]: value } : m
+    ))
+  }
+
+  const getItemStock = (id_item: string) => {
+    const item = itemsInventario.find(i => i.id_item.toString() === id_item)
+    return item?.stock_actual || 0
+  }
+
+  const getItemUnidad = (id_item: string) => {
+    const item = itemsInventario.find(i => i.id_item.toString() === id_item)
+    return item?.unidad_medida || ''
+  }
+
   const onSubmit = async (data: TareaFormData) => {
     setLoading(true)
+
+    // Validar materiales si está activo
+    let consumos: ConsumoMaterial[] = []
+    if (showMateriales) {
+      const materialesValidos = materialesSeleccionados.filter(m => m.id_item && m.cantidad)
+      if (materialesValidos.length === 0) {
+        showToast.error('Si activas el registro de materiales, debes agregar al menos uno')
+        setLoading(false)
+        return
+      }
+
+      consumos = materialesValidos.map(m => ({
+        id_item: parseInt(m.id_item),
+        cantidad: parseFloat(m.cantidad),
+        motivo: m.motivo || undefined
+      }))
+    }
 
     try {
       const loadingToast = showToast.loading(
@@ -120,6 +180,23 @@ export function TareaForm({ tarea, defaultPlantaId, onSuccess, onCancel }: Tarea
       showToast.dismiss(loadingToast)
 
       if (result.success) {
+        // Si hay materiales para registrar
+        if (showMateriales && consumos.length > 0) {
+          const idTarea = isEditing ? tarea!.id_tarea : result.data?.id_tarea
+
+          if (idTarea) {
+            try {
+              const materialsToast = showToast.loading('Registrando consumo de materiales...')
+              await registrarConsumoTarea(idTarea, consumos)
+              showToast.dismiss(materialsToast)
+              showToast.success('Materiales registrados correctamente')
+            } catch (matError) {
+              console.error('Error registrando materiales:', matError)
+              showToast.error('Tarea guardada, pero hubo un error al registrar materiales')
+            }
+          }
+        }
+
         showToast.success(result.message)
         onSuccess?.()
       } else {
@@ -210,6 +287,116 @@ export function TareaForm({ tarea, defaultPlantaId, onSuccess, onCancel }: Tarea
         )}
         {errors.id_planta && !defaultPlantaId && (
           <p className="text-sm text-destructive">{errors.id_planta.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-4 pt-4 border-t">
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="registrar_materiales"
+            checked={showMateriales}
+            onCheckedChange={(checked) => {
+              setShowMateriales(!!checked)
+              if (checked && materialesSeleccionados.length === 0) {
+                handleAddMaterial()
+              }
+            }}
+            disabled={loading}
+          />
+          <Label htmlFor="registrar_materiales" className="font-medium">
+            Registrar consumo de materiales
+          </Label>
+        </div>
+
+        {showMateriales && (
+          <div className="space-y-3 pl-6 border-l-2 border-muted ml-1">
+            {materialesSeleccionados.map((item, index) => (
+              <div key={item.id} className="grid gap-3 p-3 bg-muted/40 rounded-lg relative group">
+                <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {materialesSeleccionados.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => handleRemoveMaterial(item.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pr-6">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Material / Item</Label>
+                    <Select
+                      value={item.id_item}
+                      onValueChange={(value) => handleMaterialChange(item.id, 'id_item', value)}
+                      disabled={loading}
+                    >
+                      <SelectTrigger className="h-8">
+                        <SelectValue placeholder="Seleccionar item..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {itemsInventario.map((invItem) => (
+                          <SelectItem key={invItem.id_item} value={invItem.id_item.toString()}>
+                            <div className="flex justify-between items-center w-full gap-2">
+                              <span>{invItem.nombre}</span>
+                              <span className={`text-xs ${invItem.stock_actual <= 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                                (Stock: {invItem.stock_actual} {invItem.unidad_medida})
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs">Cantidad</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        className="h-8"
+                        placeholder="0.00"
+                        value={item.cantidad}
+                        onChange={(e) => handleMaterialChange(item.id, 'cantidad', e.target.value)}
+                        disabled={loading}
+                      />
+                      <span className="text-xs text-muted-foreground w-12 truncate">
+                        {item.id_item ? getItemUnidad(item.id_item) : ''}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs">Motivo / Notas (Opcional)</Label>
+                  <Input
+                    className="h-8"
+                    placeholder="Ej: Fertilizante inicial"
+                    value={item.motivo}
+                    onChange={(e) => handleMaterialChange(item.id, 'motivo', e.target.value)}
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+            ))}
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleAddMaterial}
+              disabled={loading}
+              className="w-full border-dashed"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Agregar otro material
+            </Button>
+          </div>
         )}
       </div>
 

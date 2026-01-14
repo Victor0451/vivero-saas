@@ -13,7 +13,7 @@ export async function uploadPlantImage(file: File, tenantId: string, plantId?: n
       : `${tenantId}/temp_${Date.now()}.${fileExt}`
 
     // Subir archivo
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from(BUCKET_NAME)
       .upload(fileName, file, {
         cacheControl: '3600',
@@ -30,8 +30,9 @@ export async function uploadPlantImage(file: File, tenantId: string, plantId?: n
       .getPublicUrl(fileName)
 
     return { success: true, url: urlData.publicUrl }
-  } catch (error: any) {
-    return { success: false, error: error.message || 'Error desconocido al subir imagen' }
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Error desconocido al subir imagen'
+    return { success: false, error: message }
   }
 }
 
@@ -53,8 +54,9 @@ export async function deletePlantImage(imageUrl: string): Promise<{ success: boo
     }
 
     return { success: true }
-  } catch (error: any) {
-    return { success: false, error: error.message || 'Error desconocido al eliminar imagen' }
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Error desconocido al eliminar imagen'
+    return { success: false, error: message }
   }
 }
 

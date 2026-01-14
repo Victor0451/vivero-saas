@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { format } from 'date-fns'
@@ -15,13 +15,11 @@ import {
   ArrowLeft,
   Edit,
   Trash2,
-  Calendar,
   Lightbulb,
-  Droplets,
   Sprout,
   AlertTriangle,
   Skull,
-  Flower,
+  Calendar,
   ImageIcon,
   Plus,
   CheckSquare
@@ -53,7 +51,27 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
   const [editingHistoria, setEditingHistoria] = useState<HistoriaClinica | null>(null)
   const [editingTarea, setEditingTarea] = useState<Tarea | null>(null)
 
-  const loadPlanta = async () => {
+  const loadTareas = useCallback(async () => {
+    try {
+      const data = await getTareas()
+      // Filtrar solo las tareas relacionadas con esta planta
+      const tareasPlanta = data.filter(tarea => tarea.id_planta === id)
+      setTareas(tareasPlanta)
+    } catch (err) {
+      console.error('Error loading tareas:', err)
+    }
+  }, [id])
+
+  const loadHistoriaClinica = useCallback(async () => {
+    try {
+      const data = await getHistoriaClinicaByPlanta(id)
+      setHistoriaClinica(data)
+    } catch (err) {
+      console.error('Error loading historia clinica:', err)
+    }
+  }, [id])
+
+  const loadPlanta = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -75,31 +93,12 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
     } finally {
       setLoading(false)
     }
-  }
-
-  const loadHistoriaClinica = async () => {
-    try {
-      const data = await getHistoriaClinicaByPlanta(id)
-      setHistoriaClinica(data)
-    } catch (err) {
-      console.error('Error loading historia clinica:', err)
-    }
-  }
-
-  const loadTareas = async () => {
-    try {
-      const data = await getTareas()
-      // Filtrar solo las tareas relacionadas con esta planta
-      const tareasPlanta = data.filter(tarea => tarea.id_planta === id)
-      setTareas(tareasPlanta)
-    } catch (err) {
-      console.error('Error loading tareas:', err)
-    }
-  }
+  }, [id, loadHistoriaClinica, loadTareas])
 
   useEffect(() => {
     loadPlanta()
-  }, [id])
+  }, [loadPlanta])
+
 
   const handleEdit = () => {
     setSheetOpen(true)
@@ -174,6 +173,7 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
         return <Lightbulb className="w-4 h-4 text-gray-400" />
     }
   }
+
 
   const getIluminacionLabel = (iluminacion?: string) => {
     switch (iluminacion) {
@@ -460,8 +460,8 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
                   <div
                     key={tarea.id_tarea}
                     className={`flex items-center space-x-4 p-4 rounded-lg border transition-all hover:shadow-sm cursor-pointer ${tarea.completada
-                        ? 'bg-muted/50 border-muted'
-                        : 'bg-card border-border'
+                      ? 'bg-muted/50 border-muted'
+                      : 'bg-card border-border'
                       }`}
                     onClick={() => handleEditTarea(tarea)}
                   >

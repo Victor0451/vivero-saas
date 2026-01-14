@@ -1,5 +1,5 @@
 import { ReactNode } from 'react'
-import { Button } from '@/components/ui/button'
+import React from 'react'
 import { cn } from '@/lib/utils'
 
 interface PageHeaderProps {

@@ -1,9 +1,9 @@
 # 📋 Product Requirements Document (PRD)
 ## Vivero SaaS - Sistema de Gestión para Viveros
 
-**Versión:** 1.1.0
-**Fecha:** Diciembre 2025
-**Estado:** Implementado (Fase 1 + Testing + CI/CD Completos)
+**Versión:** 1.2.0
+**Fecha:** Enero 2026
+**Estado:** Implementado (Fase 1 + Analytics + Notificaciones + PWA + Subgéneros Completos)
 
 ---
 
@@ -477,4 +477,4 @@
 
 ---
 
-*Este PRD se actualizará conforme evolucione el producto. Última actualización: Diciembre 2025 - Fase 1 + Testing + CI/CD Completados*
+*Este PRD se actualiza conforme evoluciona el producto. Última actualización: Enero 2026 - v1.2.0 con PWA, Subgéneros y Mejoras en Macetas*

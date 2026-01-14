@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Plus, Edit, Trash2, Calendar, Activity, Stethoscope } from 'lucide-react'
+import { Plus, Edit, Trash2, Calendar, Stethoscope } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { deleteHistoriaClinica } from '@/app/actions/plantas'
@@ -24,7 +24,6 @@ interface HistoriaClinicaListProps {
 
 export function HistoriaClinicaList({
   historias,
-  idPlanta,
   onAdd,
   onEdit,
   onRefresh,
@@ -44,6 +43,7 @@ export function HistoriaClinicaList({
         showToast.error(result.message)
       }
     } catch (error) {
+      console.error('Error deleting historia clinica:', error)
       showToast.error('Error al eliminar el registro')
     } finally {
       setDeletingId(null)
@@ -113,11 +113,10 @@ export function HistoriaClinicaList({
           {historias.map((historia) => (
             <div
               key={historia.id_historia}
-              className={`border rounded-lg p-4 transition-all hover:shadow-sm ${
-                historia.estuvo_enferma
-                  ? 'border-orange-200 bg-orange-50/50 dark:border-orange-800 dark:bg-orange-950/20'
-                  : 'border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20'
-              }`}
+              className={`border rounded-lg p-4 transition-all hover:shadow-sm ${historia.estuvo_enferma
+                ? 'border-orange-200 bg-orange-50/50 dark:border-orange-800 dark:bg-orange-950/20'
+                : 'border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20'
+                }`}
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">

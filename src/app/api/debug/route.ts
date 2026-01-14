@@ -17,11 +17,12 @@ export async function POST(request: NextRequest) {
       default:
         return NextResponse.json({ error: 'Acción no reconocida' }, { status: 400 })
     }
-  } catch (error: any) {
-    console.error('Error en API debug:', error)
+  } catch (error: unknown) {
+    const err = error as Error
+    console.error('Error en API debug:', err)
     return NextResponse.json({
-      error: error.message || 'Error interno',
-      stack: error.stack
+      error: err.message || 'Error interno',
+      stack: err.stack
     }, { status: 500 })
   }
 }

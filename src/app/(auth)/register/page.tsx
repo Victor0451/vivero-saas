@@ -21,7 +21,7 @@ export default function RegisterPage() {
 
     try {
       await registerAction(formData)
-    } catch (err) {
+    } catch {
       setError('Error al crear la cuenta. Inténtalo de nuevo.')
     } finally {
       setIsLoading(false)

@@ -13,7 +13,7 @@ export const showToast = {
   dismiss: (toastId?: string | number) => {
     toast.dismiss(toastId)
   },
-  promise: async <T>(
+  promise: <T>(
     promise: Promise<T>,
     {
       loading,
@@ -24,7 +24,7 @@ export const showToast = {
       success: string
       error: string
     }
-  ): Promise<any> => {
+  ): ReturnType<typeof toast.promise> => {
     return toast.promise(promise, {
       loading,
       success,

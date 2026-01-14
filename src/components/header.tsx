@@ -11,8 +11,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { User, LogOut, Settings, Moon, Sun } from 'lucide-react'
+import { User, LogOut, Settings } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { NotificationCenter } from '@/components/notifications/notification-center'
 
 interface HeaderProps {
   tenantName?: string
@@ -66,10 +67,13 @@ export async function Header({ tenantName = 'Vivero Principal' }: HeaderProps) {
         </div>
       </div>
 
-      {/* User Menu & Theme Toggle */}
-      <div className="flex items-center space-x-4">
+      {/* User Menu, Notifications & Theme Toggle */}
+      <div className="flex items-center space-x-2">
         {/* Theme Toggle */}
         <ThemeToggle />
+
+        {/* Notification Center */}
+        <NotificationCenter />
 
         {/* User Dropdown */}
         <DropdownMenu>
