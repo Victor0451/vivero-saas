@@ -7,7 +7,7 @@ import { PageHeader } from '@/components/page-header'
 import { MacetasTable } from '@/components/macetas-table'
 import { MacetaSheet } from '@/components/maceta-sheet'
 import { Plus, Box } from 'lucide-react'
-import { getMacetas } from '@/app/actions/plantas'
+import { getMacetas } from '@/app/actions/macetas'
 import { showToast } from '@/lib/toast'
 import type { Maceta } from '@/types'
 

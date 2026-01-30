@@ -23,7 +23,7 @@ import { ConfirmDialog } from '@/components/confirm-dialog'
 import { MoreHorizontal, Pencil, Trash2, Box } from 'lucide-react'
 import { showToast } from '@/lib/toast'
 import type { Maceta } from '@/types'
-import { deleteMaceta } from '../app/actions/plantas'
+import { deleteMaceta } from '@/app/actions/macetas'
 
 interface MacetasTableProps {
   macetas: Maceta[]

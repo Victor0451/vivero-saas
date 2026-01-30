@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/select'
 import { Loader2 } from 'lucide-react'
 import type { Maceta } from '@/types'
-import { createMaceta, updateMaceta } from '@/app/actions/plantas'
+import { createMaceta, updateMaceta } from '@/app/actions/macetas'
 import { showToast } from '@/lib/toast'
 
 const macetaSchema = z.object({

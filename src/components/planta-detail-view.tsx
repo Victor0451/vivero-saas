@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Button } from '@/components/ui/button'
@@ -22,18 +21,26 @@ import {
   Calendar,
   ImageIcon,
   Plus,
-  CheckSquare
+  CheckSquare,
+  QrCode
 } from 'lucide-react'
-import type { PlantaConDetalles, HistoriaClinica, Tarea } from '@/types'
-import { getPlantaByIdWithResponse, softDeletePlanta, getHistoriaClinicaByPlanta, getTareas } from '../app/actions/plantas'
+import { getPlantaByIdWithResponse, softDeletePlanta } from '@/app/actions/plantas'
+import { getHistoriaClinicaByPlanta } from '@/app/actions/historia-clinica'
+import { getTareas } from '@/app/actions/tareas'
+import { getGeneros } from '@/app/actions/generos'
+import { getMacetas } from '@/app/actions/macetas'
 import { showToast } from '@/lib/toast'
+import type { PlantaConDetalles, HistoriaClinica, Tarea, GeneroPlanta, Maceta } from '@/types'
 import { PlantaSheet } from './planta-sheet'
 import { DeletePlantaDialog } from './delete-planta-dialog'
-import { HistoriaClinicaList } from './historia-clinica-list'
+import { HistoriaClinicaTimeline } from './historia-clinica-timeline'
 import { HistoriaClinicaSheet } from './historia-clinica-sheet'
 import { TareaSheet } from './tarea-sheet'
+import { PlantaQRLabel } from './planta-qr-label'
 
-interface PlantaDetailViewProps {
+import { HistoriaClinicaFilters, type FilterState } from './historia-clinica-filters'
+
+export interface PlantaDetailViewProps {
   id: number
 }
 
@@ -46,10 +53,21 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [historiaClinica, setHistoriaClinica] = useState<HistoriaClinica[]>([])
   const [tareas, setTareas] = useState<Tarea[]>([])
+  const [generos, setGeneros] = useState<GeneroPlanta[]>([])
+  const [macetas, setMacetas] = useState<Maceta[]>([])
   const [historiaSheetOpen, setHistoriaSheetOpen] = useState(false)
   const [tareaSheetOpen, setTareaSheetOpen] = useState(false)
   const [editingHistoria, setEditingHistoria] = useState<HistoriaClinica | null>(null)
   const [editingTarea, setEditingTarea] = useState<Tarea | null>(null)
+  const [qrLabelOpen, setQrLabelOpen] = useState(false)
+
+  const [historyFilters, setHistoryFilters] = useState<FilterState>({
+    search: '',
+    tipoEvento: 'all',
+    estado: 'all',
+    fechaStart: '',
+    fechaEnd: ''
+  })
 
   const loadTareas = useCallback(async () => {
     try {
@@ -85,7 +103,7 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
           loadTareas()
         ])
       } else {
-        setError(result.message || 'Error al cargar la planta')
+        setError(result.message === 'Planta no encontrada' ? 'No tienes permiso para ver esta planta o no existe.' : (result.message || 'Error al cargar la planta'))
       }
     } catch (err) {
       console.error('Error loading planta:', err)
@@ -98,6 +116,19 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
   useEffect(() => {
     loadPlanta()
   }, [loadPlanta])
+
+  useEffect(() => {
+    async function fetchCatalogues() {
+      try {
+        const [g, m] = await Promise.all([getGeneros(), getMacetas()])
+        setGeneros(g)
+        setMacetas(m)
+      } catch (e) {
+        console.error('Error fetching catalogues', e)
+      }
+    }
+    fetchCatalogues()
+  }, [])
 
 
   const handleEdit = () => {
@@ -143,6 +174,7 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
 
   const handleHistoriaClinicaSuccess = () => {
     loadHistoriaClinica()
+    loadPlanta() // Recargar la planta para actualizar la maceta si hubo un transplante
   }
 
   const handleAddTarea = () => {
@@ -245,6 +277,39 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
     return <PlantaDetailSkeleton />
   }
 
+  const filteredHistory = historiaClinica.filter(item => {
+    // Filter by Search
+    if (historyFilters.search && !item.descripcion.toLowerCase().includes(historyFilters.search.toLowerCase()) &&
+      (!item.tratamiento || !item.tratamiento.toLowerCase().includes(historyFilters.search.toLowerCase()))) {
+      return false;
+    }
+
+    // Filter by Type
+    if (historyFilters.tipoEvento !== 'all' && item.tipo_evento !== historyFilters.tipoEvento) {
+      return false;
+    }
+
+    // Filter by State
+    if (historyFilters.estado !== 'all') {
+      if (historyFilters.estado === 'enferma' && !item.estuvo_enferma) return false;
+      if (historyFilters.estado === 'sana' && item.estuvo_enferma) return false;
+    }
+
+    // Filter by Date
+    if (historyFilters.fechaStart && new Date(item.fecha) < new Date(historyFilters.fechaStart)) return false;
+    if (historyFilters.fechaEnd && new Date(item.fecha) > new Date(historyFilters.fechaEnd)) return false;
+
+    return true;
+  });
+
+  const activeFiltersCount = [
+    historyFilters.search !== '',
+    historyFilters.tipoEvento !== 'all',
+    historyFilters.estado !== 'all',
+    historyFilters.fechaStart !== '',
+    historyFilters.fechaEnd !== ''
+  ].filter(Boolean).length;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -267,6 +332,10 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
             <Edit className="w-4 h-4 mr-2" />
             Editar
           </Button>
+          <Button variant="outline" onClick={() => setQrLabelOpen(true)} className="border-primary/20 hover:bg-primary/5 text-primary">
+            <QrCode className="w-4 h-4 mr-2" />
+            Etiqueta QR
+          </Button>
           <Button variant="destructive" onClick={() => setDeleteDialogOpen(true)}>
             <Trash2 className="w-4 h-4 mr-2" />
             Eliminar
@@ -287,13 +356,18 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
           <CardContent>
             {planta.image_url ? (
               <div className="aspect-square relative rounded-lg overflow-hidden bg-muted">
-                <Image
+                <img
                   src={planta.image_url}
                   alt={planta.nombre}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none'
+                    e.currentTarget.parentElement?.querySelector('.fallback')?.classList.remove('hidden')
+                  }}
                 />
+                <div className="fallback hidden absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted to-muted/50 text-muted-foreground/30">
+                  <ImageIcon className="w-12 h-12" />
+                </div>
               </div>
             ) : (
               <div className="aspect-square flex items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/25">
@@ -415,12 +489,19 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
 
       {/* Historial Clínico */}
       <div className="mt-8">
-        <HistoriaClinicaList
-          historias={historiaClinica}
-          idPlanta={id}
-          onAdd={handleAddHistoriaClinica}
+        <HistoriaClinicaFilters
+          onFilterChange={setHistoryFilters}
+          activeFiltersCount={activeFiltersCount}
+        />
+        <div className="flex justify-end mb-4">
+          <Button size="sm" onClick={handleAddHistoriaClinica}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nuevo Registro
+          </Button>
+        </div>
+        <HistoriaClinicaTimeline
+          historias={filteredHistory}
           onEdit={handleEditHistoriaClinica}
-          onRefresh={loadHistoriaClinica}
         />
       </div>
 
@@ -522,6 +603,15 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
         onOpenChange={setHistoriaSheetOpen}
         historia={editingHistoria}
         idPlanta={id}
+        plantas={planta ? [{
+          id_planta: planta.id_planta,
+          nombre: planta.nombre,
+          id_genero: planta.id_genero,
+          id_subgenero: planta.id_subgenero,
+          id_maceta: planta.id_maceta
+        }] : []}
+        generos={generos}
+        macetas={macetas}
         onSuccess={handleHistoriaClinicaSuccess}
       />
 
@@ -530,6 +620,12 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
         onOpenChange={setTareaSheetOpen}
         tarea={editingTarea}
         onSuccess={handleTareaSuccess}
+      />
+
+      <PlantaQRLabel
+        open={qrLabelOpen}
+        onOpenChange={setQrLabelOpen}
+        planta={planta}
       />
     </div>
   )

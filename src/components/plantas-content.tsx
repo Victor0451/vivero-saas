@@ -1,21 +1,41 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { PlantasTable } from './plantas-table'
 import { PlantaSheet } from './planta-sheet'
 import { TareaSheet } from './tarea-sheet'
 import { HistoriaClinicaSheet } from './historia-clinica-sheet'
 import { LoadingIndicator } from './ui/loading-indicator'
-import type { PlantaConDetalles } from '@/types'
+import { PlantasFilterBar } from './plantas-filter-bar'
+import { PlantasGrid } from './plantas-grid'
+import { Button } from '@/components/ui/button'
+import type { PlantaConDetalles, GeneroPlanta, SubgeneroConGenero } from '@/types'
 import { getPlantas } from '../app/actions/plantas'
+import { BulkActionToolbar } from './bulk-action-toolbar'
 
-export function PlantasContent() {
-  const [plantas, setPlantas] = useState<PlantaConDetalles[]>([])
-  const [loading, setLoading] = useState(true)
+interface PlantasContentProps {
+  initialPlantas: PlantaConDetalles[]
+  generos: GeneroPlanta[]
+  subgeneros: SubgeneroConGenero[]
+}
+
+export function PlantasContent({ initialPlantas, generos, subgeneros }: PlantasContentProps) {
+  const [plantas, setPlantas] = useState<PlantaConDetalles[]>(initialPlantas)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Filter States
+  const [search, setSearch] = useState('')
+  const [genreId, setGenreId] = useState('all')
+  const [subgenreId, setSubgenreId] = useState('all')
+  const [status, setStatus] = useState('all')
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [selectedIds, setSelectedIds] = useState<number[]>([])
+
   const [sheetOpen, setSheetOpen] = useState(false)
   const [tareaSheetOpen, setTareaSheetOpen] = useState(false)
   const [historiaSheetOpen, setHistoriaSheetOpen] = useState(false)
+  const [bulkTareaSheetOpen, setBulkTareaSheetOpen] = useState(false)
   const [editingPlanta, setEditingPlanta] = useState<PlantaConDetalles | null>(null)
   const [selectedPlantaForTarea, setSelectedPlantaForTarea] = useState<PlantaConDetalles | null>(null)
   const [selectedPlantaForHistoria, setSelectedPlantaForHistoria] = useState<PlantaConDetalles | null>(null)
@@ -34,9 +54,19 @@ export function PlantasContent() {
     }
   }
 
-  useEffect(() => {
-    loadPlantas()
-  }, [])
+  // Filtering Logic
+  const filteredPlantas = plantas.filter(planta => {
+    const matchesSearch = planta.nombre.toLowerCase().includes(search.toLowerCase())
+    const matchesGenre = genreId === 'all' || planta.id_genero.toString() === genreId
+    const matchesSubgenre = subgenreId === 'all' || planta.id_subgenero?.toString() === subgenreId
+
+    let matchesStatus = true
+    if (status === 'enferma') matchesStatus = planta.esta_enferma && !planta.esta_muerta
+    else if (status === 'muerta') matchesStatus = planta.esta_muerta
+    else if (status === 'normal') matchesStatus = !planta.esta_enferma && !planta.esta_muerta
+
+    return matchesSearch && matchesGenre && matchesSubgenre && matchesStatus
+  })
 
   const handleCreate = () => {
     setEditingPlanta(null)
@@ -71,36 +101,56 @@ export function PlantasContent() {
   }
 
   return (
-    <>
+    <div className="space-y-4">
+      <PlantasFilterBar
+        search={search}
+        onSearchChange={setSearch}
+        genreId={genreId}
+        onGenreIdChange={(val) => { setGenreId(val); setSubgenreId('all'); }}
+        subgenreId={subgenreId}
+        onSubgenreIdChange={setSubgenreId}
+        status={status}
+        onStatusChange={setStatus}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        generos={generos}
+        subgeneros={subgeneros}
+      />
+
       {loading ? (
-        <div className="space-y-6">
-          <div className="flex items-center justify-center py-12">
-            <LoadingIndicator size="lg" message="Cargando plantas..." />
-          </div>
+        <div className="flex items-center justify-center py-24">
+          <LoadingIndicator size="lg" message="Sincronizando colección..." />
         </div>
       ) : error ? (
-        <div className="space-y-6">
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="text-red-500 mb-4">
-                <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Error al cargar plantas</h3>
-              <p className="text-muted-foreground mb-4">{error}</p>
-              <button
-                onClick={loadPlantas}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-              >
-                Reintentar
-              </button>
-            </div>
+        <div className="flex flex-col items-center justify-center py-12 bg-destructive/5 rounded-2xl border border-destructive/20 text-center">
+          <div className="text-destructive mb-4">
+            <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
           </div>
+          <h3 className="text-lg font-semibold mb-2">Error de conexión</h3>
+          <p className="text-muted-foreground mb-6 max-w-sm">{error}</p>
+          <Button onClick={loadPlantas} variant="default" className="rounded-xl px-8">
+            Reintentar
+          </Button>
         </div>
+      ) : viewMode === 'grid' ? (
+        <PlantasGrid
+          plantas={filteredPlantas}
+          onEdit={handleEdit}
+          onDelete={() => loadPlantas()}
+          onCreateTarea={handleCreateTarea}
+          onCreateHistoria={handleCreateHistoria}
+          selectedIds={selectedIds}
+          onToggleSelection={(id) => {
+            setSelectedIds(prev =>
+              prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+            )
+          }}
+        />
       ) : (
         <PlantasTable
-          plantas={plantas}
+          plantas={filteredPlantas}
           loading={loading}
           error={error}
           onEdit={handleEdit}
@@ -108,8 +158,27 @@ export function PlantasContent() {
           onCreate={handleCreate}
           onCreateTarea={handleCreateTarea}
           onCreateHistoria={handleCreateHistoria}
+          selectedIds={selectedIds}
+          onToggleSelection={(id) => {
+            setSelectedIds(prev =>
+              prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+            )
+          }}
+          onToggleAllSelect={(ids) => {
+            setSelectedIds(ids)
+          }}
         />
       )}
+
+      <BulkActionToolbar
+        selectedIds={selectedIds}
+        onClearSelection={() => setSelectedIds([])}
+        onOpenBulkTask={() => setBulkTareaSheetOpen(true)}
+        onSuccess={() => {
+          setSelectedIds([])
+          loadPlantas()
+        }}
+      />
 
       <PlantaSheet
         open={sheetOpen}
@@ -126,6 +195,17 @@ export function PlantasContent() {
         }}
         defaultPlantaId={selectedPlantaForTarea?.id_planta}
         onSuccess={handleTareaSuccess}
+      />
+
+      <TareaSheet
+        open={bulkTareaSheetOpen}
+        onOpenChange={setBulkTareaSheetOpen}
+        plantaIds={selectedIds}
+        onSuccess={() => {
+          setSelectedIds([])
+          loadPlantas()
+          setBulkTareaSheetOpen(false)
+        }}
       />
 
       <HistoriaClinicaSheet
@@ -145,6 +225,6 @@ export function PlantasContent() {
       <form id="planta-form" onSubmit={(e) => { e.preventDefault(); handleCreate(); }}>
         <button type="submit" style={{ display: 'none' }} />
       </form>
-    </>
+    </div>
   )
 }

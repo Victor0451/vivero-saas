@@ -51,6 +51,21 @@ export default function RegisterPage() {
 
           <form action={handleSubmit} className="space-y-5">
             <div className="space-y-2">
+              <Label htmlFor="nombre" className="text-sm font-medium">
+                Nombre Completo
+              </Label>
+              <Input
+                id="nombre"
+                name="nombre"
+                type="text"
+                placeholder="Tu nombre y apellido"
+                required
+                disabled={isLoading}
+                className="h-12 text-base"
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">
                 Correo electrónico
               </Label>

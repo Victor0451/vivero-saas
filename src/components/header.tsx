@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { User, LogOut, Settings } from 'lucide-react'
+import { User, LogOut, Settings, HelpCircle } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { NotificationCenter } from '@/components/notifications/notification-center'
 
@@ -28,8 +28,8 @@ async function getUserProfile() {
   if (userError || !user) {
     return {
       id: '',
-      email: 'usuario@vivero.com',
-      nombre: 'Usuario',
+      email: 'No identificado',
+      nombre: 'Invitado',
       avatar_url: ''
     }
   }
@@ -74,6 +74,13 @@ export async function Header({ tenantName = 'Vivero Principal' }: HeaderProps) {
 
         {/* Notification Center */}
         <NotificationCenter />
+
+        {/* Help Center Shortcut */}
+        <Link href="/guia">
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-muted-foreground hover:text-primary transition-colors">
+            <HelpCircle className="h-5 w-5" />
+          </Button>
+        </Link>
 
         {/* User Dropdown */}
         <DropdownMenu>

@@ -10,7 +10,7 @@ import { GeneroSheet } from '@/components/genero-sheet'
 import { SubgenerosTable } from '@/components/subgeneros-table'
 import { SubgeneroSheet } from '@/components/subgenero-sheet'
 import { Plus, Sprout, ListTree, Zap } from 'lucide-react'
-import { getGeneros } from '@/app/actions/plantas'
+import { getGeneros } from '@/app/actions/generos'
 import { getSubgeneros } from '@/app/actions/subgeneros'
 import { showToast } from '@/lib/toast'
 import type { GeneroPlanta, SubgeneroConGenero } from '@/types'
@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { createGenero } from '@/app/actions/plantas'
+import { createGenero } from '@/app/actions/generos'
 import { createSubgenero } from '@/app/actions/subgeneros'
 
 export default function GenerosPage() {

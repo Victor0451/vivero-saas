@@ -7,7 +7,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Upload, X, Image as ImageIcon } from 'lucide-react'
 import { showToast } from '@/lib/toast'
 import { uploadPlantImage, deletePlantImage, validateImageFile } from '@/lib/supabase/storage'
-import Image from 'next/image'
 
 interface PlantImageUploadProps {
   value?: string
@@ -31,11 +30,15 @@ export function PlantImageUpload({
 
   // Limpiar object URLs cuando cambie el value
   useEffect(() => {
+    // Solo revocar si el nuevo valor es diferente al objectUrl actual
+    // y no es el mismo objectUrl (para evitar flashes)
     if (objectUrl && value !== objectUrl) {
       URL.revokeObjectURL(objectUrl)
       setObjectUrl(undefined)
-      setPreviewUrl(value)
-    } else if (!objectUrl) {
+    }
+
+    // Si el valor cambia externamente (ej: al cargar el form), actualizar preview
+    if (value !== objectUrl) {
       setPreviewUrl(value)
     }
   }, [value, objectUrl])
@@ -182,13 +185,14 @@ export function PlantImageUpload({
           </div>
         ) : previewUrl ? (
           <div className="space-y-4">
-            <div className="relative mx-auto w-32 h-32">
-              <Image
+            <div className="relative mx-auto w-32 h-32 rounded-lg overflow-hidden border bg-muted">
+              <img
                 src={previewUrl}
                 alt="Vista previa de la planta"
-                fill
-                className="object-cover rounded-lg"
-                sizes="128px"
+                className="h-full w-full object-cover"
+                onError={(e) => {
+                  console.error('Error loading upload preview:', previewUrl)
+                }}
               />
             </div>
 

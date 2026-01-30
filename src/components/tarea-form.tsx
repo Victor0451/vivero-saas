@@ -15,10 +15,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Loader2, Package, Plus, Trash2 } from 'lucide-react'
+import { Loader2, Plus, Trash2 } from 'lucide-react'
 import { format } from 'date-fns'
 import type { Tarea, Planta, ItemInventarioConDetalles } from '@/types'
-import { createTarea, updateTarea, getPlantas } from '@/app/actions/plantas'
+import { createTarea, updateTarea, bulkCreateTareas } from '@/app/actions/tareas'
+import { getPlantas } from '@/app/actions/plantas'
 import { getItems } from '@/app/actions/inventario'
 import { registrarConsumoTarea, type ConsumoMaterial } from '@/app/actions/inventario-tareas'
 import { showToast } from '@/lib/toast'
@@ -48,11 +49,12 @@ type TareaFormData = z.infer<typeof tareaSchema>
 interface TareaFormProps {
   tarea?: Tarea | null
   defaultPlantaId?: number
+  plantaIds?: number[]
   onSuccess?: () => void
   onCancel?: () => void
 }
 
-export function TareaForm({ tarea, defaultPlantaId, onSuccess, onCancel }: TareaFormProps) {
+export function TareaForm({ tarea, defaultPlantaId, plantaIds = [], onSuccess, onCancel }: TareaFormProps) {
   const [loading, setLoading] = useState(false)
   const [plantas, setPlantas] = useState<Planta[]>([])
   const [itemsInventario, setItemsInventario] = useState<ItemInventarioConDetalles[]>([])
@@ -138,15 +140,14 @@ export function TareaForm({ tarea, defaultPlantaId, onSuccess, onCancel }: Tarea
     ))
   }
 
-  const getItemStock = (id_item: string) => {
-    const item = itemsInventario.find(i => i.id_item.toString() === id_item)
-    return item?.stock_actual || 0
-  }
+
 
   const getItemUnidad = (id_item: string) => {
     const item = itemsInventario.find(i => i.id_item.toString() === id_item)
     return item?.unidad_medida || ''
   }
+
+  const isBulk = plantaIds.length > 1
 
   const onSubmit = async (data: TareaFormData) => {
     setLoading(true)
@@ -170,18 +171,23 @@ export function TareaForm({ tarea, defaultPlantaId, onSuccess, onCancel }: Tarea
 
     try {
       const loadingToast = showToast.loading(
-        isEditing ? 'Actualizando tarea...' : 'Creando tarea...'
+        isEditing ? 'Actualizando tarea...' : isBulk ? `Creando ${plantaIds.length} tareas...` : 'Creando tarea...'
       )
 
-      const result = isEditing
-        ? await updateTarea(tarea!.id_tarea, data)
-        : await createTarea(data)
+      let result;
+      if (isEditing) {
+        result = await updateTarea(tarea!.id_tarea, data)
+      } else if (isBulk) {
+        result = await bulkCreateTareas(plantaIds, data, showMateriales ? consumos : undefined)
+      } else {
+        result = await createTarea(data)
+      }
 
       showToast.dismiss(loadingToast)
 
       if (result.success) {
-        // Si hay materiales para registrar
-        if (showMateriales && consumos.length > 0) {
+        // Registro de materiales: Para edición o creación simple (bulk ya lo maneja internamente)
+        if (showMateriales && consumos.length > 0 && !isBulk) {
           const idTarea = isEditing ? tarea!.id_tarea : result.data?.id_tarea
 
           if (idTarea) {
@@ -258,7 +264,16 @@ export function TareaForm({ tarea, defaultPlantaId, onSuccess, onCancel }: Tarea
 
       <div className="space-y-2">
         <Label>Planta relacionada</Label>
-        {defaultPlantaId ? (
+        {isBulk ? (
+          <div className="p-3 bg-primary/5 rounded-xl border border-primary/20 flex flex-col gap-1">
+            <span className="text-sm font-semibold text-primary">
+              Programando para {plantaIds.length} plantas seleccionadas
+            </span>
+            <span className="text-xs text-muted-foreground italic">
+              Se creará una copia de esta tarea para cada planta.
+            </span>
+          </div>
+        ) : defaultPlantaId ? (
           // Mostrar planta preseleccionada como campo de solo lectura
           <div className="p-3 bg-muted rounded-md border">
             <span className="text-sm font-medium">
@@ -310,7 +325,7 @@ export function TareaForm({ tarea, defaultPlantaId, onSuccess, onCancel }: Tarea
 
         {showMateriales && (
           <div className="space-y-3 pl-6 border-l-2 border-muted ml-1">
-            {materialesSeleccionados.map((item, index) => (
+            {materialesSeleccionados.map((item) => (
               <div key={item.id} className="grid gap-3 p-3 bg-muted/40 rounded-lg relative group">
                 <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   {materialesSeleccionados.length > 1 && (
@@ -326,24 +341,24 @@ export function TareaForm({ tarea, defaultPlantaId, onSuccess, onCancel }: Tarea
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pr-6">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Material / Item</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pr-8">
+                  <div className="sm:col-span-8 space-y-1.5">
+                    <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Material / Item</Label>
                     <Select
                       value={item.id_item}
                       onValueChange={(value) => handleMaterialChange(item.id, 'id_item', value)}
                       disabled={loading}
                     >
-                      <SelectTrigger className="h-8">
+                      <SelectTrigger className="h-10 bg-background/50 rounded-xl border-primary/10 transition-all focus:border-primary focus:ring-primary/20">
                         <SelectValue placeholder="Seleccionar item..." />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="rounded-xl shadow-2xl">
                         {itemsInventario.map((invItem) => (
-                          <SelectItem key={invItem.id_item} value={invItem.id_item.toString()}>
-                            <div className="flex justify-between items-center w-full gap-2">
-                              <span>{invItem.nombre}</span>
-                              <span className={`text-xs ${invItem.stock_actual <= 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
-                                (Stock: {invItem.stock_actual} {invItem.unidad_medida})
+                          <SelectItem key={invItem.id_item} value={invItem.id_item.toString()} className="rounded-lg">
+                            <div className="flex justify-between items-center w-full gap-4">
+                              <span className="font-medium">{invItem.nombre}</span>
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full ${invItem.stock_actual <= 0 ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'}`}>
+                                {invItem.stock_actual} {invItem.unidad_medida}
                               </span>
                             </div>
                           </SelectItem>
@@ -352,20 +367,20 @@ export function TareaForm({ tarea, defaultPlantaId, onSuccess, onCancel }: Tarea
                     </Select>
                   </div>
 
-                  <div className="space-y-1">
-                    <Label className="text-xs">Cantidad</Label>
-                    <div className="flex items-center gap-2">
+                  <div className="sm:col-span-4 space-y-1.5">
+                    <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Cantidad</Label>
+                    <div className="relative group/input">
                       <Input
                         type="number"
                         min="0"
                         step="0.01"
-                        className="h-8"
+                        className="h-10 pr-12 bg-background/50 rounded-xl border-primary/10 transition-all focus:border-primary focus:ring-primary/20"
                         placeholder="0.00"
                         value={item.cantidad}
                         onChange={(e) => handleMaterialChange(item.id, 'cantidad', e.target.value)}
                         disabled={loading}
                       />
-                      <span className="text-xs text-muted-foreground w-12 truncate">
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground pointer-events-none uppercase">
                         {item.id_item ? getItemUnidad(item.id_item) : ''}
                       </span>
                     </div>

@@ -384,12 +384,15 @@
 - [ ] **API REST completa** para integraciones
 - [ ] **Dashboard avanzado** con analytics
 
-### 🔄 Fase 3 - Escalabilidad (Futuro)
-- [ ] **Roles avanzados**
-- [ ] **Multi-tenancy avanzado**
-- [ ] **Integraciones externas**
-- [ ] **Analytics avanzado**
-- [ ] **Machine Learning**
+### 🔄 Fase 4 - Madurez SaaS & Monetización (🆕 Roadmap Enero 2026)
+- [ ] **Seguridad Crítica**: Corregir fuga de RLS en `server.ts` (Switch Service Role -> Anon Key).
+- [ ] **Facturación**: Integración con Stripe (Subscriptions, Webhooks).
+- [ ] **Marketing**: Landing Page profesional y Onboarding Wizard.
+- [ ] **Específicos del Nicho**: 
+    - Generación de códigos QR por planta.
+    - Acciones masivas (Riego masivo, Tratamientos por grupo).
+    - Catálogo público para ventas.
+- [ ] **Analítica Avanzada**: Mapas de calor de salud y proyecciones de insumos.
 
 ---
 

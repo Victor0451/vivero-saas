@@ -8,14 +8,16 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { HistoriaClinicaForm } from './historia-clinica-form'
-import type { HistoriaClinica } from '@/types'
+import type { HistoriaClinica, Maceta } from '@/types'
 
 interface HistoriaClinicaSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   historia?: HistoriaClinica | null
   idPlanta: number
-  plantas?: Array<{ id_planta: number; nombre: string }>
+  plantas?: Array<{ id_planta: number; nombre: string; id_genero: number; id_subgenero?: number | null; id_maceta?: number | null }>
+  generos?: Array<{ id_genero: number; nombre: string }>
+  macetas?: Maceta[]
   allowPlantaSelection?: boolean
   onSuccess?: () => void
 }
@@ -26,6 +28,8 @@ export function HistoriaClinicaSheet({
   historia,
   idPlanta,
   plantas = [],
+  generos = [],
+  macetas = [],
   allowPlantaSelection = false,
   onSuccess
 }: HistoriaClinicaSheetProps) {
@@ -60,6 +64,8 @@ export function HistoriaClinicaSheet({
             historia={historia}
             idPlanta={idPlanta}
             plantas={plantas}
+            generos={generos}
+            macetas={macetas}
             allowPlantaSelection={allowPlantaSelection}
             onSuccess={handleSuccess}
             onCancel={handleCancel}

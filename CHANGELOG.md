@@ -5,6 +5,39 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.3.1] - 2026-01-30
+
+### 🎯 Resumen Ejecutivo
+
+Este release se enfoca en la robustez de seguridad, el puente físico-digital mediante códigos QR y la optimización de la experiencia de usuario (UX) en movilidad. Se ha re-estructurado el sistema de permisos (RLS) para garantizar el aislamiento multi-tenant y se ha implementado un escáner integrado profesional.
+
+### ✨ Nuevas Funcionalidades
+
+#### 🤳 Puente Físico-Digital (Mobile Bridge)
+- **Escáner QR Integrado**: Nuevo diálogo de escaneo con visualización en tiempo real y detección rápida.
+- **Identificación Instantánea**: Acceso directo a fichas de plantas desde escaneo nativo o interno.
+- **Login Redirect**: Flujo inteligente que redirige al usuario a la planta escaneada automáticamente después de iniciar sesión.
+
+#### 📚 Centro de Aprendizaje (Docs In-App)
+- **Nueva Página de Guía**: Portal formativo con visuales premium y tutoriales paso a paso.
+- **Visuales Modernos**: Integración de capturas de pantalla y leyendas interactivas.
+
+#### 📦 Gestión Masiva (Bulk Inventory)
+- **Acciones en Lote**: Posibilidad de regar, cambiar estado o actualizar salud de múltiples plantas simultáneamente.
+- **Barra de Herramientas Dinámica**: Aparece automáticamente al seleccionar items en el grid.
+
+### 🔧 Mejoras
+- **Seguridad Multi-tenant Nivel 2**: Re-escritura total de las políticas RLS para evitar recursión infinita y asegurar aislamiento total.
+- **Middleware Proactivo**: Detección de sesión mejorada con preservación de URL de destino (`redirectTo`).
+- **Aislamiento de Perfiles**: Limpieza de fallbacks de usuario genérico en el Header para evitar estados inconsistentes.
+- **Roadmap Actualizado**: Sincronización de objetivos y próximos pasos en `docs/roadmap-saas.md`.
+
+### 🐛 Correcciones
+- **RLS Recursion Fixed**: Solucionado el error `42P17` mediante el uso de funciones `SECURITY DEFINER`.
+- **Nuke & Reset**: Limpieza profunda de políticas antiguas que causaban conflictos de auditoría.
+- **Camera Access Diagnostics**: Mejora en los mensajes de error cuando el navegador bloquea la cámara por protocolos inseguros (HTTP).
+- **Lint & Build Clean**: Eliminación de logs de debug y resolución de warnings de React en componentes críticos.
+
 ## [1.3.0] - 2026-01-14
 
 ### 🎯 Resumen Ejecutivo

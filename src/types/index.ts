@@ -6,9 +6,17 @@ export type Tenant = {
   created_at: string; // timestamp
 };
 
+export type ActionResponse<T = void> = {
+  success: boolean
+  data?: T
+  message: string
+}
+
 export type User = {
   id_user: string; // UUID FK auth.users
   id_tenant: string; // UUID
+  nombre: string;
+  avatar_url?: string;
   rol: string;
   activo: boolean;
   created_at: string; // timestamp
@@ -115,7 +123,12 @@ export type HistoriaClinica = {
   fecha: string; // date
   descripcion: string;
   tratamiento?: string;
+  tipo_evento?: string; // New field
   estuvo_enferma: boolean;
+  plantas?: {
+    nombre: string;
+    id_planta: number;
+  };
 };
 
 export type Tarea = {

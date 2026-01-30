@@ -1,17 +1,17 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Optimizaciones para evitar timeouts en build
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   experimental: {
     // Fix para el warning de turbopack
     // @ts-expect-error - Turbopack config might not be typed yet
     turbopack: {},
+    optimizePackageImports: [
+      'lucide-react',
+      'date-fns',
+      'recharts',
+      'lodash',
+      'ramda'
+    ],
   },
   images: {
     remotePatterns: [

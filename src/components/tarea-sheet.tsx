@@ -15,11 +15,13 @@ interface TareaSheetProps {
   onOpenChange: (open: boolean) => void
   tarea?: Tarea | null
   defaultPlantaId?: number
+  plantaIds?: number[]
   onSuccess?: () => void
 }
 
-export function TareaSheet({ open, onOpenChange, tarea, defaultPlantaId, onSuccess }: TareaSheetProps) {
+export function TareaSheet({ open, onOpenChange, tarea, defaultPlantaId, plantaIds = [], onSuccess }: TareaSheetProps) {
   const isEditing = !!tarea
+  const isBulk = plantaIds.length > 1
 
   const handleSuccess = () => {
     onSuccess?.()
@@ -35,12 +37,14 @@ export function TareaSheet({ open, onOpenChange, tarea, defaultPlantaId, onSucce
       <SheetContent className="sm:max-w-[600px] overflow-y-auto">
         <SheetHeader>
           <SheetTitle>
-            {isEditing ? 'Editar Tarea' : 'Nueva Tarea'}
+            {isEditing ? 'Editar Tarea' : isBulk ? 'Nueva Tarea Masiva' : 'Nueva Tarea'}
           </SheetTitle>
           <SheetDescription>
             {isEditing
               ? 'Modifica los datos de la tarea seleccionada.'
-              : 'Agrega una nueva tarea a tu lista de pendientes.'
+              : isBulk
+                ? `Crea una tarea común para las ${plantaIds.length} plantas seleccionadas.`
+                : 'Agrega una nueva tarea a tu lista de pendientes.'
             }
           </SheetDescription>
         </SheetHeader>
@@ -49,6 +53,7 @@ export function TareaSheet({ open, onOpenChange, tarea, defaultPlantaId, onSucce
           <TareaForm
             tarea={tarea}
             defaultPlantaId={defaultPlantaId}
+            plantaIds={plantaIds}
             onSuccess={handleSuccess}
             onCancel={handleCancel}
           />

@@ -17,8 +17,11 @@ import {
   Box,
   User,
   Package,
-  LucideIcon
+  LucideIcon,
+  Camera,
+  HelpCircle
 } from 'lucide-react'
+import { QRScannerDialog } from './qr-scanner-dialog'
 import { useState } from 'react'
 
 interface NavigationItem {
@@ -39,6 +42,7 @@ const navigation: NavigationItem[] = [
     href: '/plantas',
     icon: Sprout,
   },
+
   {
     name: 'Inventario',
     href: '/inventario',
@@ -71,6 +75,12 @@ const navigation: NavigationItem[] = [
     href: '/tareas',
     icon: CheckSquare,
   },
+
+  {
+    name: 'Centro de Ayuda',
+    href: '/guia',
+    icon: HelpCircle,
+  },
   {
     name: 'Configuración',
     href: '#',
@@ -98,6 +108,7 @@ export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
   const [expandedMenus, setExpandedMenus] = useState<string[]>([])
+  const [scannerOpen, setScannerOpen] = useState(false)
 
   const toggleMenu = (menuName: string) => {
     setExpandedMenus(prev =>
@@ -150,6 +161,18 @@ export function Sidebar({ className }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1">
+        {/* Rapid QR Scanner Button */}
+        <Button
+          onClick={() => setScannerOpen(true)}
+          className={cn(
+            "w-full justify-start mb-6 bg-primary/10 hover:bg-primary/20 text-primary border-none shadow-none rounded-xl h-12 transition-all group",
+            collapsed ? "px-2" : "px-3"
+          )}
+        >
+          <Camera className={cn("h-5 w-5", !collapsed && "mr-3", "group-hover:scale-110 transition-transform")} />
+          {!collapsed && <span className="font-bold tracking-tight">Escanear QR</span>}
+        </Button>
+
         {navigation.map((item) => {
           const isActive = isMenuActive(item)
 
@@ -233,6 +256,10 @@ export function Sidebar({ className }: SidebarProps) {
           </div>
         )}
       </div>
+      <QRScannerDialog
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+      />
     </div>
   )
 }

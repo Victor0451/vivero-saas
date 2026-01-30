@@ -23,6 +23,7 @@ import { EmptyState } from '@/components/empty-state'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { MoreHorizontal, Pencil, Trash2, Sprout, CheckSquare, Stethoscope, Calendar, Flower } from 'lucide-react'
 import { showToast } from '@/lib/toast'
+import { Checkbox } from '@/components/ui/checkbox'
 import type { PlantaConDetalles } from '@/types'
 import { softDeletePlanta } from '../app/actions/plantas'
 
@@ -35,9 +36,24 @@ interface PlantasTableProps {
   onCreate?: () => void
   onCreateTarea?: (planta: PlantaConDetalles) => void
   onCreateHistoria?: (planta: PlantaConDetalles) => void
+  selectedIds?: number[]
+  onToggleSelection?: (id: number) => void
+  onToggleAllSelect?: (ids: number[]) => void
 }
 
-const PlantasTableComponent = ({ plantas, loading, error, onEdit, onRefresh, onCreate, onCreateTarea, onCreateHistoria }: PlantasTableProps) => {
+const PlantasTableComponent = ({
+  plantas,
+  loading,
+  error,
+  onEdit,
+  onRefresh,
+  onCreate,
+  onCreateTarea,
+  onCreateHistoria,
+  selectedIds = [],
+  onToggleSelection,
+  onToggleAllSelect
+}: PlantasTableProps) => {
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: number | null; nombre: string }>({
     open: false,
@@ -95,19 +111,27 @@ const PlantasTableComponent = ({ plantas, loading, error, onEdit, onRefresh, onC
       <div className="space-y-3">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Género</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Fecha Compra</TableHead>
-              <TableHead>Floración</TableHead>
-              <TableHead className="w-[70px]"></TableHead>
-            </TableRow>
+            <TableHead className="w-[40px]">
+              <Checkbox
+                checked={plantas.length > 0 && selectedIds.length === plantas.length}
+                onCheckedChange={(checked) => {
+                  if (checked) onToggleAllSelect?.(plantas.map(p => p.id_planta))
+                  else onToggleAllSelect?.([])
+                }}
+              />
+            </TableHead>
+            <TableHead>Nombre</TableHead>
+            <TableHead>Tipo</TableHead>
+            <TableHead>Género</TableHead>
+            <TableHead>Estado</TableHead>
+            <TableHead>Fecha Compra</TableHead>
+            <TableHead>Floración</TableHead>
+            <TableHead className="w-[70px]"></TableHead>
           </TableHeader>
           <TableBody>
             {Array.from({ length: 5 }).map((_, i) => (
               <TableRow key={i}>
+                <TableCell><Skeleton className="h-4 w-4" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-[200px]" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
@@ -142,96 +166,126 @@ const PlantasTableComponent = ({ plantas, loading, error, onEdit, onRefresh, onC
   }
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-2xl border bg-card/50 backdrop-blur-sm overflow-hidden shadow-sm">
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead>Nombre</TableHead>
-            <TableHead>Tipo</TableHead>
-            <TableHead>Género</TableHead>
-            <TableHead>Estado</TableHead>
-            <TableHead>Fecha Compra</TableHead>
-            <TableHead>Floración</TableHead>
-            <TableHead className="w-[70px]"></TableHead>
+          <TableRow className="bg-muted/30 hover:bg-muted/30 border-b">
+            <TableHead className="w-[40px] py-4">
+              <Checkbox
+                checked={plantas.length > 0 && selectedIds.length === plantas.length}
+                onCheckedChange={(checked) => {
+                  if (checked) onToggleAllSelect?.(plantas.map(p => p.id_planta))
+                  else onToggleAllSelect?.([])
+                }}
+              />
+            </TableHead>
+            <TableHead className="font-semibold py-4">Nombre</TableHead>
+            <TableHead className="font-semibold py-4">Género & Subgénero</TableHead>
+            <TableHead className="font-semibold py-4">Tipo</TableHead>
+            <TableHead className="font-semibold py-4">Estado</TableHead>
+            <TableHead className="font-semibold py-4">Fecha Compra</TableHead>
+            <TableHead className="font-semibold py-4">Floración</TableHead>
+            <TableHead className="w-[70px] py-4"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {plantas.map((planta) => (
-            <TableRow key={planta.id_planta}>
-              <TableCell className="font-medium">
-                <Link
-                  href={`/plantas/${planta.id_planta}`}
-                  className="text-primary hover:text-primary/80 transition-colors"
-                >
-                  {planta.nombre}
-                </Link>
-              </TableCell>
-              <TableCell>
-                {planta.tipos_planta?.nombre || 'N/A'}
-              </TableCell>
-              <TableCell>
-                {planta.generos_planta?.nombre || 'N/A'}
-              </TableCell>
-              <TableCell>
-                {getEstadoBadge(planta)}
-              </TableCell>
-              <TableCell>
-                {planta.fecha_compra ? (
-                  <div className="flex items-center gap-1 text-sm">
-                    <Calendar className="h-3 w-3" />
-                    {new Date(planta.fecha_compra).toLocaleDateString('es-ES')}
+          {plantas.map((planta) => {
+            const isSelected = selectedIds.includes(planta.id_planta)
+            return (
+              <TableRow
+                key={planta.id_planta}
+                className={`group hover:bg-muted/20 transition-colors border-b last:border-0 ${isSelected ? 'bg-primary/5' : ''}`}
+              >
+                <TableCell className="py-4">
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => onToggleSelection?.(planta.id_planta)}
+                  />
+                </TableCell>
+                <TableCell className="py-4">
+                  <Link
+                    href={`/plantas/${planta.id_planta}`}
+                    className="font-bold text-primary hover:underline decoration-primary/30 underline-offset-4 transition-all"
+                  >
+                    {planta.nombre}
+                  </Link>
+                </TableCell>
+                <TableCell className="py-4">
+                  <div className="flex flex-col">
+                    <span className="font-medium">{planta.generos_planta?.nombre || 'N/A'}</span>
+                    {planta.subgeneros_planta && (
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+                        {planta.subgeneros_planta.nombre}
+                      </span>
+                    )}
                   </div>
-                ) : (
-                  <span className="text-muted-foreground">N/A</span>
-                )}
-              </TableCell>
-              <TableCell>
-                {planta.floracion ? (
-                  <Badge variant="secondary" className="gap-1">
-                    <Flower className="h-3 w-3" />
-                    Sí
+                </TableCell>
+                <TableCell className="py-4">
+                  <Badge variant="outline" className="font-normal bg-muted/50 rounded-lg">
+                    {planta.tipos_planta?.nombre || 'N/A'}
                   </Badge>
-                ) : (
-                  <span className="text-muted-foreground">No</span>
-                )}
-              </TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="h-8 w-8 p-0"
-                      disabled={deletingId === planta.id_planta}
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onEdit?.(planta)}>
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Editar planta
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onCreateTarea?.(planta)}>
-                      <CheckSquare className="mr-2 h-4 w-4" />
-                      Nueva tarea
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onCreateHistoria?.(planta)}>
-                      <Stethoscope className="mr-2 h-4 w-4" />
-                      Nuevo registro médico
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="text-destructive"
-                      onClick={() => handleDeleteClick(planta.id_planta, planta.nombre)}
-                      disabled={deletingId === planta.id_planta}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      {deletingId === planta.id_planta ? 'Eliminando...' : 'Eliminar'}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
+                </TableCell>
+                <TableCell className="py-4">
+                  {getEstadoBadge(planta)}
+                </TableCell>
+                <TableCell className="py-4">
+                  {planta.fecha_compra ? (
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {new Date(planta.fecha_compra).toLocaleDateString('es-ES')}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">N/A</span>
+                  )}
+                </TableCell>
+                <TableCell className="py-4">
+                  {planta.floracion ? (
+                    <Badge variant="secondary" className="gap-1 bg-pink-500/10 text-pink-500 border-pink-500/20 rounded-full hover:bg-pink-500/20">
+                      <Flower className="h-3 w-3" />
+                      Sí
+                    </Badge>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">No</span>
+                  )}
+                </TableCell>
+                <TableCell className="py-4">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="h-9 w-9 p-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        disabled={deletingId === planta.id_planta}
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="rounded-xl">
+                      <DropdownMenuItem onClick={() => onEdit?.(planta)} className="rounded-lg">
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Editar planta
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onCreateTarea?.(planta)} className="rounded-lg">
+                        <CheckSquare className="mr-2 h-4 w-4" />
+                        Nueva tarea
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onCreateHistoria?.(planta)} className="rounded-lg">
+                        <Stethoscope className="mr-2 h-4 w-4" />
+                        Nuevo registro médico
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-destructive rounded-lg focus:text-destructive"
+                        onClick={() => handleDeleteClick(planta.id_planta, planta.nombre)}
+                        disabled={deletingId === planta.id_planta}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        {deletingId === planta.id_planta ? 'Eliminando...' : 'Eliminar'}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            )
+          })}
         </TableBody>
       </Table>
 

@@ -35,6 +35,8 @@ function LoginContent() {
     setError(null)
 
     try {
+      const redirectTo = searchParams.get('redirectTo') || '/dashboard'
+      formData.append('redirectTo', redirectTo)
       await loginAction(formData)
     } catch (err) {
       // El error ya se maneja en la acción server-side con redirect

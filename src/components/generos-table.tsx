@@ -22,7 +22,7 @@ import { EmptyState } from '@/components/empty-state'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { showToast } from '@/lib/toast'
 import type { GeneroPlanta } from '@/types'
-import { deleteGenero } from '../app/actions/plantas'
+import { deleteGenero } from '@/app/actions/generos'
 
 interface GenerosTableProps {
   generos: GeneroPlanta[]

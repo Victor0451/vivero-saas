@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Loader2 } from 'lucide-react'
 import type { GeneroPlanta } from '@/types'
-import { createGenero, updateGenero } from '@/app/actions/plantas'
+import { createGenero, updateGenero } from '@/app/actions/generos'
 import { showToast } from '@/lib/toast'
 
 const generoSchema = z.object({

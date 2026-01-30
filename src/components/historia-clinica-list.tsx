@@ -5,16 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Plus, Edit, Trash2, Calendar, Stethoscope } from 'lucide-react'
+import { Plus, Edit, Trash2, Calendar, Stethoscope, Droplets, Scissors, Sprout, Skull, Activity, Syringe, MoveRight } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { deleteHistoriaClinica } from '@/app/actions/plantas'
+import { deleteHistoriaClinica } from '@/app/actions/historia-clinica'
 import { showToast } from '@/lib/toast'
 import type { HistoriaClinica } from '@/types'
 
 interface HistoriaClinicaListProps {
   historias: HistoriaClinica[]
-  idPlanta: number
+  idPlanta?: number
   onAdd?: () => void
   onEdit?: (historia: HistoriaClinica) => void
   onRefresh?: () => void
@@ -31,6 +31,31 @@ export function HistoriaClinicaList({
   compact = false
 }: HistoriaClinicaListProps) {
   const [deletingId, setDeletingId] = useState<number | null>(null)
+
+  const getEventIcon = (type?: string) => {
+    switch (type) {
+      case 'Riego': return <Droplets className="h-4 w-4" />;
+      case 'Poda':
+      case 'Decapitación':
+      case 'Esquejado': return <Scissors className="h-4 w-4" />;
+      case 'Fertilización': return <Sprout className="h-4 w-4" />;
+      case 'Transplante': return <MoveRight className="h-4 w-4" />;
+      case 'Tratamiento': return <Syringe className="h-4 w-4" />;
+      case 'Deceso': return <Skull className="h-4 w-4" />;
+      case 'Diagnóstico': return <Activity className="h-4 w-4" />;
+      default: return <Stethoscope className="h-4 w-4" />;
+    }
+  }
+
+  const getEventColor = (type?: string) => {
+    switch (type) {
+      case 'Riego': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 border-blue-200 dark:border-blue-800';
+      case 'Tratamiento': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100 border-purple-200 dark:border-purple-800';
+      case 'Transplante': return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100 border-amber-200 dark:border-amber-800';
+      case 'Deceso': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100 border-red-200 dark:border-red-800';
+      default: return 'bg-secondary text-secondary-foreground hover:bg-secondary/80';
+    }
+  }
 
   const handleDelete = async (id: number) => {
     setDeletingId(id)
@@ -68,7 +93,8 @@ export function HistoriaClinicaList({
               )}
             </div>
           </CardHeader>
-        )}
+        )
+        }
         <CardContent>
           <div className="text-center py-8">
             <Stethoscope className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -86,7 +112,7 @@ export function HistoriaClinicaList({
             )}
           </div>
         </CardContent>
-      </Card>
+      </Card >
     )
   }
 
@@ -124,9 +150,20 @@ export function HistoriaClinicaList({
                   <span className="font-medium">
                     {format(new Date(historia.fecha), 'PPP', { locale: es })}
                   </span>
-                  <Badge variant={historia.estuvo_enferma ? "destructive" : "secondary"}>
+                  <Badge variant={historia.estuvo_enferma ? "destructive" : "outline"}>
                     {historia.estuvo_enferma ? 'Enferma' : 'Saludable'}
                   </Badge>
+                  {historia.tipo_evento && (
+                    <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getEventColor(historia.tipo_evento)}`}>
+                      {getEventIcon(historia.tipo_evento)}
+                      {historia.tipo_evento}
+                    </div>
+                  )}
+                  {historia.plantas && (
+                    <Badge variant="secondary" className="bg-muted">
+                      {historia.plantas.nombre}
+                    </Badge>
+                  )}
                 </div>
                 {!compact && onEdit && (
                   <div className="flex gap-2">
@@ -188,6 +225,6 @@ export function HistoriaClinicaList({
           ))}
         </div>
       </CardContent>
-    </Card>
+    </Card >
   )
 }

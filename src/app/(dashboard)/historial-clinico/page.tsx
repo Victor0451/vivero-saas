@@ -10,17 +10,32 @@ import { LoadingSpinner } from '@/components/loading-spinner'
 import { Plus, Stethoscope, Calendar, Filter, AlertTriangle, CheckCircle } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { getHistoriaClinicaByPlanta, getPlantas } from '@/app/actions/plantas'
+import { getAllHistoriaClinicaWithPlantas } from '@/app/actions/historia-clinica'
+import { getGeneros } from '@/app/actions/generos'
+import { getMacetas } from '@/app/actions/macetas'
+import { getPlantas } from '@/app/actions/plantas'
 import { showToast } from '@/lib/toast'
 import { HistoriaClinicaSheet } from '@/components/historia-clinica-sheet'
-import type { HistoriaClinica, Planta } from '@/types'
+import { HistoriaClinicaTimeline } from '@/components/historia-clinica-timeline'
+import { HistoriaClinicaFilters, type FilterState } from '@/components/historia-clinica-filters'
+import type { HistoriaClinica, Planta, GeneroPlanta, Maceta } from '@/types'
 
 type FilterType = 'all' | 'healthy' | 'sick'
 
 export default function HistorialClinicoPage() {
   const [historias, setHistorias] = useState<HistoriaClinica[]>([])
   const [plantas, setPlantas] = useState<Planta[]>([])
-  const [filter, setFilter] = useState<FilterType>('all')
+  const [generos, setGeneros] = useState<GeneroPlanta[]>([])
+  const [macetas, setMacetas] = useState<Maceta[]>([])
+
+  const [historyFilters, setHistoryFilters] = useState<FilterState>({
+    search: '',
+    tipoEvento: 'all',
+    estado: 'all',
+    fechaStart: '',
+    fechaEnd: ''
+  })
+
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -31,24 +46,18 @@ export default function HistorialClinicoPage() {
       setIsLoading(true)
       setError(null)
 
-      const [plantasData] = await Promise.all([
-        getPlantas()
+      const [plantasData, generosData, macetasData, historiasData] = await Promise.all([
+        getPlantas(),
+        getGeneros(),
+        getMacetas(),
+        getAllHistoriaClinicaWithPlantas()
       ])
 
       setPlantas(plantasData)
+      setGeneros(generosData)
+      setMacetas(macetasData)
+      setHistorias(historiasData)
 
-      // Cargar historial clínico de todas las plantas
-      const allHistorias: HistoriaClinica[] = []
-      for (const planta of plantasData) {
-        try {
-          const historiasPlanta = await getHistoriaClinicaByPlanta(planta.id_planta)
-          allHistorias.push(...historiasPlanta)
-        } catch (err) {
-          console.error(`Error loading historia for planta ${planta.id_planta}:`, err)
-        }
-      }
-
-      setHistorias(allHistorias)
     } catch (err) {
       console.error('Error loading data:', err)
       setError('Error al cargar el historial clínico')
@@ -62,16 +71,39 @@ export default function HistorialClinicoPage() {
     loadData()
   }, [])
 
-  const filteredHistorias = historias.filter(historia => {
-    switch (filter) {
-      case 'healthy':
-        return !historia.estuvo_enferma
-      case 'sick':
-        return historia.estuvo_enferma
-      default:
-        return true
+  const filteredHistorias = historias.filter(item => {
+    // Filter by Search
+    if (historyFilters.search && !item.descripcion.toLowerCase().includes(historyFilters.search.toLowerCase()) &&
+      (!item.tratamiento || !item.tratamiento.toLowerCase().includes(historyFilters.search.toLowerCase())) &&
+      (!item.plantas?.nombre || !item.plantas.nombre.toLowerCase().includes(historyFilters.search.toLowerCase()))) {
+      return false;
     }
-  })
+
+    // Filter by Type
+    if (historyFilters.tipoEvento !== 'all' && item.tipo_evento !== historyFilters.tipoEvento) {
+      return false;
+    }
+
+    // Filter by State
+    if (historyFilters.estado !== 'all') {
+      if (historyFilters.estado === 'enferma' && !item.estuvo_enferma) return false;
+      if (historyFilters.estado === 'sana' && item.estuvo_enferma) return false;
+    }
+
+    // Filter by Date
+    if (historyFilters.fechaStart && new Date(item.fecha) < new Date(historyFilters.fechaStart)) return false;
+    if (historyFilters.fechaEnd && new Date(item.fecha) > new Date(historyFilters.fechaEnd)) return false;
+
+    return true;
+  });
+
+  const activeFiltersCount = [
+    historyFilters.search !== '',
+    historyFilters.tipoEvento !== 'all',
+    historyFilters.estado !== 'all',
+    historyFilters.fechaStart !== '',
+    historyFilters.fechaEnd !== ''
+  ].filter(Boolean).length;
 
   const handleAddRegistro = () => {
     if (plantas.length === 0) {
@@ -159,36 +191,18 @@ export default function HistorialClinicoPage() {
       </div>
 
       {/* Filters */}
+      <HistoriaClinicaFilters
+        onFilterChange={setHistoryFilters}
+        activeFiltersCount={activeFiltersCount}
+      />
+
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Historial Clínico
+              <Stethoscope className="h-5 w-5" />
+              Historial Clínico ({filteredHistorias.length})
             </CardTitle>
-            <div className="flex gap-2">
-              <Button
-                variant={filter === 'all' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setFilter('all')}
-              >
-                Todos ({stats.total})
-              </Button>
-              <Button
-                variant={filter === 'healthy' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setFilter('healthy')}
-              >
-                Saludables ({stats.healthy})
-              </Button>
-              <Button
-                variant={filter === 'sick' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setFilter('sick')}
-              >
-                Enfermos ({stats.sick})
-              </Button>
-            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -196,70 +210,10 @@ export default function HistorialClinicoPage() {
             <div className="flex justify-center py-8">
               <LoadingSpinner />
             </div>
-          ) : filteredHistorias.length === 0 ? (
-            <EmptyState
-              icon={<Stethoscope className="h-12 w-12 text-muted-foreground" />}
-              title="No hay registros clínicos"
-              description={
-                filter === 'healthy'
-                  ? "No hay registros de estados saludables en este filtro."
-                  : filter === 'sick'
-                    ? "No hay registros de enfermedades en este filtro."
-                    : "No hay registros clínicos registrados aún."
-              }
-            />
           ) : (
-            <div className="space-y-4">
-              {filteredHistorias
-                .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
-                .map((historia) => {
-                  const planta = plantas.find(p => p.id_planta === historia.id_planta)
-                  return (
-                    <div
-                      key={historia.id_historia}
-                      className={`border rounded-lg p-4 transition-all hover:shadow-sm ${historia.estuvo_enferma
-                        ? 'border-orange-200 bg-orange-50/50 dark:border-orange-800 dark:bg-orange-950/20'
-                        : 'border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20'
-                        }`}
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">
-                            {format(new Date(historia.fecha), 'PPP', { locale: es })}
-                          </span>
-                          <Badge variant={historia.estuvo_enferma ? "destructive" : "secondary"}>
-                            {historia.estuvo_enferma ? 'Enferma' : 'Saludable'}
-                          </Badge>
-                        </div>
-                        {planta && (
-                          <Badge variant="outline">
-                            {planta.nombre}
-                          </Badge>
-                        )}
-                      </div>
-
-                      <div className="space-y-3">
-                        <div>
-                          <h4 className="text-sm font-medium text-muted-foreground mb-1">
-                            Descripción
-                          </h4>
-                          <p className="text-sm">{historia.descripcion}</p>
-                        </div>
-
-                        {historia.tratamiento && (
-                          <div>
-                            <h4 className="text-sm font-medium text-muted-foreground mb-1">
-                              Tratamiento
-                            </h4>
-                            <p className="text-sm">{historia.tratamiento}</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-            </div>
+            <HistoriaClinicaTimeline
+              historias={filteredHistorias}
+            />
           )}
         </CardContent>
       </Card>
@@ -269,9 +223,11 @@ export default function HistorialClinicoPage() {
         onOpenChange={setSheetOpen}
         idPlanta={selectedPlantaId || plantas[0]?.id_planta || 0}
         plantas={plantas}
+        generos={generos}
+        macetas={macetas}
         allowPlantaSelection={true}
         onSuccess={handleSuccess}
       />
-    </div>
+    </div >
   )
 }

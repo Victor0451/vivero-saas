@@ -18,7 +18,9 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Loader2 } from 'lucide-react'
 import type { PlantaConDetalles, TipoPlantaOption, GeneroPlantaOption, SubgeneroPlantaOption, MacetaOption } from '@/types'
-import { createPlanta, updatePlanta, getTiposPlanta, getGenerosPlanta, getMacetas, seedTiposPlanta, poblarGenerosManual, diagnosticarQueries, poblarDatosPrueba } from '../app/actions/plantas'
+import { createPlanta, updatePlanta, getTiposPlanta } from '@/app/actions/plantas'
+import { getMacetas } from '@/app/actions/macetas'
+import { getGeneros } from '@/app/actions/generos'
 import { getSubgenerosByGenero } from '../app/actions/subgeneros'
 import { showToast } from '@/lib/toast'
 import { PlantImageUpload } from './plant-image-upload'
@@ -62,11 +64,7 @@ export function PlantaForm({ planta, onSuccess, onCancel }: PlantaFormProps) {
     console.log('Cargando opciones del formulario...')
 
     try {
-      // Diagnóstico completo en desarrollo (solo en la carga inicial)
-      if (process.env.NODE_ENV === 'development' && loadingOptions) {
-        console.log('Ejecutando diagnóstico de queries...')
-        await diagnosticarQueries()
-      }
+
       // Cargar tipos, y si no hay, intentar poblar
       let tiposData: TipoPlantaOption[] = []
       try {
@@ -77,22 +75,7 @@ export function PlantaForm({ planta, onSuccess, onCancel }: PlantaFormProps) {
         tiposData = []
       }
 
-      if (!tiposData || tiposData.length === 0) {
-        console.log('No hay tipos de planta, intentando poblar datos de ejemplo...')
-        try {
-          const seedResult = await seedTiposPlanta()
-          console.log('Resultado seed tipos:', seedResult.message)
-          // Recargar tipos después de poblar
-          try {
-            tiposData = await getTiposPlanta()
-            console.log('Tipos después del seed:', tiposData?.length || 0)
-          } catch (reloadError) {
-            console.error('Error recargando tipos después del seed:', reloadError)
-          }
-        } catch (seedError) {
-          console.error('Error poblando tipos:', seedError)
-        }
-      }
+
 
       setTipos(tiposData || [])
 
@@ -101,7 +84,7 @@ export function PlantaForm({ planta, onSuccess, onCancel }: PlantaFormProps) {
       setMacetas(macetasData || [])
 
       // Cargar géneros
-      const generosData = await getGenerosPlanta()
+      const generosData = await getGeneros()
       setGeneros(generosData || [])
       setShowGenerosMessage(!generosData || generosData.length === 0)
 
@@ -111,7 +94,7 @@ export function PlantaForm({ planta, onSuccess, onCancel }: PlantaFormProps) {
     } finally {
       setLoadingOptions(false)
     }
-  }, [loadingOptions])
+  }, [])
 
   const isEditing = !!planta
 
@@ -165,7 +148,7 @@ export function PlantaForm({ planta, onSuccess, onCancel }: PlantaFormProps) {
 
 
   const recargarGeneros = async () => {
-    const generosData = await getGenerosPlanta()
+    const generosData = await getGeneros()
     setGeneros(generosData || [])
     setShowGenerosMessage(!generosData || generosData.length === 0)
   }
@@ -198,12 +181,7 @@ export function PlantaForm({ planta, onSuccess, onCancel }: PlantaFormProps) {
 
   useEffect(() => {
     const initializeForm = async () => {
-      // Diagnóstico completo en desarrollo
-      if (process.env.NODE_ENV === 'development') {
-        console.log('=== INICIALIZANDO FORMULARIO ===')
-        console.log('Para diagnóstico detallado, visita: /debug')
-        console.log('O ejecuta en consola: poblarDatosPrueba()')
-      }
+
 
       // Cargar tenant ID y opciones
       await Promise.all([
@@ -216,62 +194,6 @@ export function PlantaForm({ planta, onSuccess, onCancel }: PlantaFormProps) {
   }, [loadOptions, loadTenantId])
 
 
-  const poblarGeneros = async () => {
-    try {
-      await poblarGenerosManual()
-      await recargarGeneros()
-    } catch (error) {
-      console.error('Error poblando géneros:', error)
-    }
-  }
-
-  const poblarTodo = async () => {
-    try {
-      console.log('=== POBLANDO DATOS DE PRUEBA COMPLETOS ===')
-      const result = await poblarDatosPrueba()
-      console.log('Resultado del poblado:', result)
-
-      // Recargar todas las opciones sin recargar la página
-      console.log('Recargando opciones del formulario...')
-      await loadOptions()
-      setLoadingOptions(false)
-
-      console.log('=== POBLADO COMPLETADO ===')
-    } catch (error) {
-      console.error('Error poblando datos:', error)
-    }
-  }
-
-  // Función global para debug desde consola
-  React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).poblarDatosPrueba = async () => {
-        console.log('=== EJECUTANDO POBLAR DATOS DE PRUEBA ===')
-        try {
-          const result = await poblarDatosPrueba()
-          console.log('Resultado:', result)
-          return result
-        } catch (error: unknown) {
-          console.error('Error:', error)
-          return { error: error instanceof Error ? error.message : 'Error desconocido' }
-        }
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).diagnosticarQueries = async () => {
-        console.log('=== EJECUTANDO DIAGNÓSTICO ===')
-        try {
-          const result = await diagnosticarQueries()
-          console.log('Resultado diagnóstico:', result)
-          return result
-        } catch (error: unknown) {
-          console.error('Error diagnóstico:', error)
-          return { error: error instanceof Error ? error.message : 'Error desconocido' }
-        }
-      }
-    }
-  }, [])
 
   const onSubmit = async (data: PlantaFormData) => {
     const loadingToast = showToast.loading(
@@ -397,30 +319,7 @@ export function PlantaForm({ planta, onSuccess, onCancel }: PlantaFormProps) {
                 >
                   Recargar géneros
                 </button>
-                {process.env.NODE_ENV === 'development' && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        poblarGeneros()
-                      }}
-                      className="text-green-600 hover:text-green-800 underline"
-                    >
-                      Poblar géneros
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        poblarTodo()
-                      }}
-                      className="text-purple-600 hover:text-purple-800 underline font-medium"
-                    >
-                      Poblar TODO (datos completos)
-                    </button>
-                  </>
-                )}
+
               </div>
             </div>
           )}

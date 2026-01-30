@@ -31,7 +31,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 import { createSubgenero, updateSubgenero } from '@/app/actions/subgeneros'
-import { getGeneros } from '@/app/actions/plantas'
+import { getGeneros } from '@/app/actions/generos'
 import { showToast } from '@/lib/toast'
 import type { SubgeneroConGenero, GeneroPlanta } from '@/types'
 
