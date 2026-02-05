@@ -1,8 +1,9 @@
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Sprout, ShieldCheck, Zap, BarChart3, Globe, Users, Check, ArrowRight, Play, Star } from 'lucide-react'
+import { Card } from '@/components/ui/card'
+import { Check, ArrowRight, Play, Star } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { loginDemoAction } from '@/app/actions/auth'
 
 export default function LandingPage() {
     return (
@@ -29,23 +30,19 @@ export default function LandingPage() {
                         </p>
 
                         <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
-                            <Link href="/register" className="w-full sm:w-auto">
+                            <form action={loginDemoAction} className="w-full sm:w-auto">
                                 <Button size="lg" className="h-16 px-10 text-xl font-bold rounded-2xl shadow-2xl shadow-primary/40 hover:scale-105 transition-transform group w-full">
-                                    Empezar Ahora
-                                    <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                    <Play className="mr-2 w-5 h-5 fill-current" /> Probar Demo Interactiva
+                                </Button>
+                            </form>
+                            <Link href="/login" className="w-full sm:w-auto">
+                                <Button variant="outline" size="lg" className="h-16 px-8 text-lg font-semibold rounded-2xl border-2 hover:bg-muted/50 w-full sm:w-auto">
+                                    Iniciar Sesión
                                 </Button>
                             </Link>
-                            <Button variant="outline" size="lg" className="h-16 px-8 text-lg font-semibold rounded-2xl border-2 hover:bg-muted/50 w-full sm:w-auto">
-                                <Play className="mr-2 w-5 h-5 fill-current" /> Ver Demo
-                            </Button>
                         </div>
 
-                        <div className="flex items-center gap-6 pt-8 grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-                            <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Utilizado por:</div>
-                            <div className="font-bold text-lg">BioFlora</div>
-                            <div className="font-bold text-lg">GreenHub</div>
-                            <div className="font-bold text-lg">TerraNova</div>
-                        </div>
+
                     </div>
 
                     <div className="relative lg:h-[600px] flex items-center justify-center animate-in fade-in zoom-in-95 duration-1000 delay-300">
@@ -59,32 +56,15 @@ export default function LandingPage() {
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-60" />
 
-                            {/* Floating Glass Stats */}
-                            <div className="absolute top-8 -left-8 glass p-6 rounded-2xl shadow-2xl animate-float hidden xl:block">
-                                <div className="text-3xl font-black text-primary">+12,400</div>
-                                <div className="text-xs font-bold uppercase text-muted-foreground">Ejemplares Gestionados</div>
-                            </div>
 
-                            <div className="absolute bottom-12 -right-8 glass p-6 rounded-2xl shadow-2xl animate-float [animation-delay:1.5s] hidden xl:block">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
-                                    <div className="text-sm font-bold uppercase tracking-tighter">Inventario en Tiempo Real</div>
-                                </div>
-                            </div>
+
+
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* Social Proof / Stats */}
-            <section className="py-20 border-y bg-muted/20">
-                <div className="container mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
-                    <StatItem label="Nursery Owners" value="500+" />
-                    <StatItem label="Successful Crops" value="1.2M" />
-                    <StatItem label="Time Saved" value="40%" />
-                    <StatItem label="ROI Average" value="3.5x" />
-                </div>
-            </section>
+
 
             {/* Feature Storytelling Section 1 */}
             <section id="features" className="py-32 relative overflow-hidden">
@@ -120,16 +100,16 @@ export default function LandingPage() {
                         <div className="space-y-8">
                             <h2 className="text-4xl lg:text-5xl font-bold tracking-tight">Tu vivero en tu bolsillo, literalmente.</h2>
                             <p className="text-lg text-muted-foreground leading-relaxed">
-                                Nuestra tecnología PWA (Progressive Web App) permite que tus operarios gestionen el día a día desde el invernadero, incluso sin internet. Escanea QR, toma fotos y actualiza el historial clínico al instante.
+                                Nuestra plataforma cloud permite que tus operarios gestionen el día a día desde el invernadero, con una interfaz diseñada específicamente para móviles. Escanea QR, toma fotos y actualiza el historial clínico al instante.
                             </p>
                             <div className="flex gap-4">
                                 <div className="p-4 rounded-2xl bg-background shadow-lg border">
-                                    <div className="font-bold text-xl mb-1">99.9%</div>
-                                    <div className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Uptime Offline</div>
+                                    <div className="font-bold text-xl mb-1">100%</div>
+                                    <div className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Mobile Ready</div>
                                 </div>
                                 <div className="p-4 rounded-2xl bg-background shadow-lg border">
-                                    <div className="font-bold text-xl mb-1">2s</div>
-                                    <div className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Sincronización</div>
+                                    <div className="font-bold text-xl mb-1">24/7</div>
+                                    <div className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Acceso Cloud</div>
                                 </div>
                             </div>
                         </div>
@@ -151,7 +131,7 @@ export default function LandingPage() {
                 <div className="container mx-auto px-4 relative">
                     <div className="max-w-3xl mx-auto text-center mb-20">
                         <h2 className="text-5xl font-bold tracking-tighter mb-6">Planes para cada escala de ambición.</h2>
-                        <p className="text-xl text-muted-foreground">Comienza hoy mismo con nuestra prueba gratuita de 14 días. Sin tarjeta de crédito.</p>
+                        <p className="text-xl text-muted-foreground">Actualmente en Beta Privada. <br />Explora la Demo para conocer el potencial.</p>
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto items-stretch">
@@ -159,20 +139,20 @@ export default function LandingPage() {
                             title="Semilla"
                             price="0"
                             description="Para iniciarte en la gestión digital."
-                            features={["50 plantas máximo", "1 Usuario", "Historial básico", "Web App"]}
+                            features={["100 plantas máximo", "1 Usuario", "Historial básico", "Web App"]}
                         />
                         <PricingCard
                             title="Brote"
-                            price="49"
+                            price="45.000"
                             isPopular={true}
                             description="La herramienta de los profesionales."
-                            features={["Plantas ilimitadas", "5 Usuarios", "Inventario Avanzado", "Soporte 24/7", "Generación de QR"]}
+                            features={["Todo lo de Semilla +", "5.000 plantas máximo", "5 Usuarios", "Historial Completo", "Gestión de Tareas", "Inventario Avanzado", "Soporte Técnico", "Generación de QR", "Link telemedicina", "Pasaporte digital"]}
                         />
                         <PricingCard
                             title="Bosque"
-                            price="149"
+                            price="145.000"
                             description="Para operaciones de nivel industrial."
-                            features={["Multi-sucursal", "Usuarios ilimitados", "API Access", "White Labeling", "Custom Integration"]}
+                            features={["Todo lo de Brote +", "Plantas Ilimitadas", "Usuarios Ilimitados", "MultiVivero", "Módulo Gestión de Ventas"]}
                         />
                     </div>
                 </div>
@@ -185,12 +165,12 @@ export default function LandingPage() {
                     <h2 className="text-5xl lg:text-7xl font-black mb-12 tracking-tighter">
                         Deja de adivinar. <br /> Empieza a cultivar con datos.
                     </h2>
-                    <Link href="/register">
+                    <form action={loginDemoAction} className="inline-block">
                         <Button size="lg" className="h-20 px-12 text-2xl font-black rounded-3xl bg-primary text-primary-foreground hover:scale-110 shadow-2xl transition-all">
-                            Crear mi Vivero Digital Gratuitamente
+                            <Play className="mr-3 w-8 h-8 fill-current" /> Acceder a la Demo
                         </Button>
-                    </Link>
-                    <p className="mt-8 text-muted-foreground font-medium uppercase tracking-[0.2em] text-sm">Prueba gratuita de 14 días • Setup en 2 minutos</p>
+                    </form>
+                    <p className="mt-8 text-muted-foreground font-medium uppercase tracking-[0.2em] text-sm">Acceso inmediato • Sin registro requerido</p>
                 </div>
             </section>
         </div>
@@ -230,9 +210,16 @@ function PricingCard({ title, price, description, features, isPopular = false }:
                     <h3 className="text-2xl font-bold">{title}</h3>
                     <p className="text-sm text-muted-foreground font-medium">{description}</p>
                 </div>
-                <div className="flex items-baseline gap-1">
-                    <span className="text-5xl font-black tracking-tighter">${price}</span>
-                    <span className="text-muted-foreground font-bold font-mono text-sm">/USD/MO</span>
+                <div className="flex flex-col gap-1">
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                        <span className="text-4xl lg:text-5xl font-black tracking-tighter">{price === "0" ? "$0" : `$${price}`}</span>
+                        <span className="text-muted-foreground font-bold font-mono text-sm">{price === "0" ? "" : "ARS/MES"}</span>
+                        {price !== "0" && (
+                            <span className="text-sm font-bold text-muted-foreground self-center">
+                                (Próximamente)
+                            </span>
+                        )}
+                    </div>
                 </div>
                 <div className="space-y-4 pt-8 border-t border-primary/10">
                     {features.map((f, i) => (
@@ -243,12 +230,10 @@ function PricingCard({ title, price, description, features, isPopular = false }:
                     ))}
                 </div>
             </div>
-            <div className="mt-12">
-                <Link href="/register">
-                    <Button className={`w-full h-14 rounded-2xl font-black text-lg ${isPopular ? 'bg-primary shadow-xl shadow-primary/30' : 'bg-foreground text-background'}`}>
-                        Seleccionar Plan
-                    </Button>
-                </Link>
+            <div className="mt-12 opacity-50 pointer-events-none">
+                <Button disabled className={`w-full h-14 rounded-2xl font-black text-lg ${isPopular ? 'bg-primary shadow-xl shadow-primary/30' : 'bg-foreground text-background'}`}>
+                    Próximamente
+                </Button>
             </div>
         </Card>
     )

@@ -102,9 +102,10 @@ const navigation: NavigationItem[] = [
 
 interface SidebarProps {
   className?: string
+  isDemo?: boolean
 }
 
-export function Sidebar({ className }: SidebarProps) {
+export function Sidebar({ className, isDemo }: SidebarProps) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
   const [expandedMenus, setExpandedMenus] = useState<string[]>([])
@@ -143,6 +144,12 @@ export function Sidebar({ className }: SidebarProps) {
               <Sprout className="w-5 h-5 text-primary-foreground" />
             </div>
             <span className="font-semibold text-lg">Vivero</span>
+          </div>
+        )}
+        {/* Demo Badge */}
+        {isDemo && !collapsed && (
+          <div className="absolute top-4 left-32 bg-orange-100 text-orange-800 text-xs px-2 py-0.5 rounded-full border border-orange-200">
+            Modo Demo
           </div>
         )}
         <Button
@@ -252,6 +259,12 @@ export function Sidebar({ className }: SidebarProps) {
         {!collapsed && (
           <div className="text-xs text-muted-foreground">
             <p>Vivero SaaS v1.3</p>
+            {isDemo && (
+              <div className="mt-2 text-[10px] bg-muted p-2 rounded border text-muted-foreground">
+                <p className="font-semibold text-orange-600">⚠ MODO LECTURA</p>
+                No se guardarán cambios.
+              </div>
+            )}
             <p className="mt-1">Sistema de gestión</p>
           </div>
         )}

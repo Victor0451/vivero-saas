@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { PlantaConDetalles, ActionResponse } from '@/types'
+import { PLANS, PlanType } from '@/config/plans'
 
 // Tipos para las funciones
 export type CreatePlantaData = {
@@ -143,6 +144,41 @@ export async function createPlanta(data: CreatePlantaData): Promise<ActionRespon
       }
     }
 
+    const tenantId = userData.id_tenant
+
+    // 🔍 VERIFICAR LÍMITE DE PLAN
+    // 1. Obtener el plan del tenant
+    const { data: tenantData, error: tenantError } = await supabase
+      .from('tenants')
+      .select('plan')
+      .eq('id_tenant', tenantId)
+      .single()
+
+    // Default a semilla si no hay plan definido
+    const planName = (tenantData?.plan as PlanType) || 'semilla'
+    const planConfig = PLANS[planName] || PLANS['semilla']
+
+    // 2. Si el límite no es infinito, verificar cantidad actual
+    if (planConfig.maxPlants !== Infinity) {
+      const { count, error: countError } = await supabase
+        .from('plantas')
+        .select('*', { count: 'exact', head: true })
+        .eq('id_tenant', tenantId)
+        .is('deleted_at', null)
+
+      if (countError) {
+        console.error('Error counting plants:', countError)
+        return { success: false, message: 'Error al verificar límites del plan' }
+      }
+
+      if ((count || 0) >= planConfig.maxPlants) {
+        return {
+          success: false,
+          message: `Has alcanzado el límite de ${planConfig.maxPlants} plantas de tu plan ${planConfig.displayName}. Actualiza a Brote para ilimitadas.`
+        }
+      }
+    }
+
     const { error } = await supabase
       .from('plantas')
       .insert({
@@ -150,7 +186,7 @@ export async function createPlanta(data: CreatePlantaData): Promise<ActionRespon
         id_tipo: data.id_tipo,
         id_genero: data.id_genero,
         id_maceta: data.id_maceta,
-        id_tenant: userData.id_tenant, // Agregar el tenant requerido por RLS
+        id_tenant: tenantId,
         fecha_compra: data.fecha_compra,
         fecha_transplante: data.fecha_transplante,
         iluminacion: data.iluminacion,

@@ -14,11 +14,11 @@ interface HistoriaClinicaSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   historia?: HistoriaClinica | null
-  idPlanta: number
-  plantas?: Array<{ id_planta: number; nombre: string; id_genero: number; id_subgenero?: number | null; id_maceta?: number | null }>
-  generos?: Array<{ id_genero: number; nombre: string }>
-  macetas?: Maceta[]
-  allowPlantaSelection?: boolean
+  defaultPlantaId?: number
+  plantaIds?: number[] // New Prop
+  plantas?: any[] // Using any[] to match Form's flexible type or import types properly
+  generos?: any[]
+  macetas?: any[]
   onSuccess?: () => void
 }
 
@@ -26,14 +26,15 @@ export function HistoriaClinicaSheet({
   open,
   onOpenChange,
   historia,
-  idPlanta,
+  defaultPlantaId = 0,
+  plantaIds = [],
   plantas = [],
   generos = [],
   macetas = [],
-  allowPlantaSelection = false,
   onSuccess
 }: HistoriaClinicaSheetProps) {
   const isEditing = !!historia
+  const isBulk = plantaIds.length > 1
 
   const handleSuccess = () => {
     onSuccess?.()
@@ -46,31 +47,37 @@ export function HistoriaClinicaSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-[600px] overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>
-            {isEditing ? 'Editar Registro Clínico' : 'Nuevo Registro Clínico'}
+      <SheetContent className="sm:max-w-[700px] overflow-y-auto">
+        <SheetHeader className="mb-6">
+          <SheetTitle className="flex items-center gap-2 text-xl">
+            {isEditing
+              ? 'Editar Registro Clínico'
+              : isBulk
+                ? 'Nuevo Evento Masivo'
+                : 'Nuevo Evento Clínico'
+            }
           </SheetTitle>
           <SheetDescription>
             {isEditing
-              ? 'Modifica los datos del registro clínico seleccionado.'
-              : 'Registra el estado de salud y tratamientos aplicados a la planta.'
+              ? 'Modifica los detalles del evento registrado.'
+              : isBulk
+                ? `Registra un suceso aplicado a ${plantaIds.length} plantas simultáneamente.`
+                : 'Registra un suceso, tratamiento o cambio en la planta.'
             }
           </SheetDescription>
         </SheetHeader>
 
-        <div className="mt-6">
-          <HistoriaClinicaForm
-            historia={historia}
-            idPlanta={idPlanta}
-            plantas={plantas}
-            generos={generos}
-            macetas={macetas}
-            allowPlantaSelection={allowPlantaSelection}
-            onSuccess={handleSuccess}
-            onCancel={handleCancel}
-          />
-        </div>
+        <HistoriaClinicaForm
+          historia={historia}
+          idPlanta={defaultPlantaId}
+          plantaIds={plantaIds}
+          plantas={plantas}
+          generos={generos}
+          macetas={macetas}
+          onSuccess={handleSuccess}
+          onCancel={handleCancel}
+          allowPlantaSelection={!isEditing && !isBulk && defaultPlantaId === 0}
+        />
       </SheetContent>
     </Sheet>
   )

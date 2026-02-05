@@ -10,7 +10,8 @@ import {
     AlertCircle,
     Skull,
     Loader2,
-    CheckSquare
+    CheckSquare,
+    Stethoscope
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -28,10 +29,11 @@ interface BulkActionToolbarProps {
     selectedIds: number[]
     onClearSelection: () => void
     onOpenBulkTask?: () => void
+    onOpenBulkHistory?: () => void
     onSuccess: () => void
 }
 
-export function BulkActionToolbar({ selectedIds, onClearSelection, onOpenBulkTask, onSuccess }: BulkActionToolbarProps) {
+export function BulkActionToolbar({ selectedIds, onClearSelection, onOpenBulkTask, onOpenBulkHistory, onSuccess }: BulkActionToolbarProps) {
     const [loading, setLoading] = useState<string | null>(null)
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
 
@@ -77,7 +79,7 @@ export function BulkActionToolbar({ selectedIds, onClearSelection, onOpenBulkTas
     return (
         <>
             <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-8 duration-300">
-                <div className="bg-background/80 backdrop-blur-xl border border-primary/20 shadow-2xl rounded-2xl px-4 py-3 flex items-center gap-4 min-w-[320px] lg:min-w-[450px]">
+                <div className="bg-background/80 backdrop-blur-xl border border-primary/20 shadow-2xl rounded-2xl px-4 py-3 flex items-center gap-4 min-w-[320px] lg:min-w-[550px]">
                     {/* Count */}
                     <div className="flex items-center gap-3 pr-4 border-r border-primary/10">
                         <div className="bg-primary text-primary-foreground h-8 w-8 rounded-xl flex items-center justify-center font-bold text-sm">
@@ -97,6 +99,17 @@ export function BulkActionToolbar({ selectedIds, onClearSelection, onOpenBulkTas
                         >
                             {loading === 'watering' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Droplets className="h-4 w-4" />}
                             <span className="hidden lg:inline">Regar</span>
+                        </Button>
+
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-primary hover:text-primary hover:bg-primary/5 rounded-xl gap-2 font-semibold"
+                            onClick={onOpenBulkHistory}
+                            disabled={!!loading}
+                        >
+                            <Stethoscope className="h-4 w-4" />
+                            <span className="hidden lg:inline">Actividad</span>
                         </Button>
 
                         <DropdownMenu>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { loginAction } from '@/app/actions/auth'
+import { loginAction, loginDemoAction } from '@/app/actions/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -21,6 +21,8 @@ function LoginContent() {
     const errorParam = searchParams.get('error')
     if (errorParam === 'invalid_credentials') {
       setError('Credenciales incorrectas. Inténtalo de nuevo.')
+    } else if (errorParam === 'registration_closed') {
+      setError('El registro público está cerrado temporalmente.')
     } else if (errorParam === 'missing_fields') {
       setError('Por favor, completa todos los campos.')
     } else if (errorParam === 'session_error') {
@@ -42,6 +44,23 @@ function LoginContent() {
       // El error ya se maneja en la acción server-side con redirect
       console.error('Unexpected login error:', err)
     } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleDemoLogin = async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const formData = new FormData()
+      await loginDemoAction(formData)
+    } catch (err) {
+      // Ignorar error de redirección de Next.js
+      if ((err as Error).message.includes('NEXT_REDIRECT')) {
+        return
+      }
+      console.error('Demo login error:', err)
+      setError('Error al iniciar la demo.')
       setIsLoading(false)
     }
   }
@@ -139,15 +158,31 @@ function LoginContent() {
             </Button>
           </form>
 
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">
+                O prueba sin registrarte
+              </span>
+            </div>
+          </div>
+
+          <Button
+            variant="outline"
+            type="button"
+            className="w-full h-12 border-primary/20 text-primary hover:bg-primary/5 hover:text-primary transition-all font-medium"
+            onClick={handleDemoLogin}
+            disabled={isLoading}
+          >
+            {isLoading ? <LoadingSpinner size="sm" className="mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+            Probá la Demo (Acceso Total)
+          </Button>
+
           <div className="text-center">
-            <p className="text-sm text-muted-foreground">
-              ¿No tienes una cuenta?{' '}
-              <Link
-                href="/register"
-                className="text-primary hover:text-primary/80 font-medium transition-colors"
-              >
-                Regístrate aquí
-              </Link>
+            <p className="text-xs text-muted-foreground bg-muted p-2 rounded">
+              Registro cerrado durante Beta Pública.
             </p>
           </div>
         </CardContent>

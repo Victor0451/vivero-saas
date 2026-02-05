@@ -125,16 +125,20 @@ export type HistoriaClinica = {
   tratamiento?: string;
   tipo_evento?: string; // New field
   estuvo_enferma: boolean;
+  severidad?: 'baja' | 'media' | 'alta' | 'critica'; // Nuevo campo
   plantas?: {
     nombre: string;
     id_planta: number;
   };
+  fotos_planta?: FotoPlanta[]; // Relación (nombre de tabla)
+  tareas?: Tarea[]; // Relación (nombre de tabla o alias)
 };
 
 export type Tarea = {
   id_tarea: number;
   id_tenant: string; // UUID
   id_planta?: number;
+  id_historia?: number; // Nueva FK
   titulo: string;
   descripcion?: string;
   fecha_programada: string; // date
@@ -303,4 +307,17 @@ export type ProveedorOption = {
   id_proveedor: number;
   nombre: string;
   codigo?: string;
+};
+
+export type FotoPlanta = {
+  id_foto: number;
+  id_planta: number;
+  id_historia?: number; // Nueva FK
+  id_tenant: string; // UUID
+  url: string;
+  storage_path: string;
+  fecha: string; // timestamp
+  notas?: string;
+  es_principal: boolean;
+  created_at: string; // timestamp
 };

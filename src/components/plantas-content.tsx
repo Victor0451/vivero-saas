@@ -36,7 +36,9 @@ export function PlantasContent({ initialPlantas, generos, subgeneros }: PlantasC
   const [tareaSheetOpen, setTareaSheetOpen] = useState(false)
   const [historiaSheetOpen, setHistoriaSheetOpen] = useState(false)
   const [bulkTareaSheetOpen, setBulkTareaSheetOpen] = useState(false)
+  const [bulkHistoriaSheetOpen, setBulkHistoriaSheetOpen] = useState(false) // New State
   const [editingPlanta, setEditingPlanta] = useState<PlantaConDetalles | null>(null)
+  // ... (state definitions) ...
   const [selectedPlantaForTarea, setSelectedPlantaForTarea] = useState<PlantaConDetalles | null>(null)
   const [selectedPlantaForHistoria, setSelectedPlantaForHistoria] = useState<PlantaConDetalles | null>(null)
 
@@ -123,11 +125,7 @@ export function PlantasContent({ initialPlantas, generos, subgeneros }: PlantasC
         </div>
       ) : error ? (
         <div className="flex flex-col items-center justify-center py-12 bg-destructive/5 rounded-2xl border border-destructive/20 text-center">
-          <div className="text-destructive mb-4">
-            <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-          </div>
+          {/* ... Error visuals ... */}
           <h3 className="text-lg font-semibold mb-2">Error de conexión</h3>
           <p className="text-muted-foreground mb-6 max-w-sm">{error}</p>
           <Button onClick={loadPlantas} variant="default" className="rounded-xl px-8">
@@ -174,6 +172,7 @@ export function PlantasContent({ initialPlantas, generos, subgeneros }: PlantasC
         selectedIds={selectedIds}
         onClearSelection={() => setSelectedIds([])}
         onOpenBulkTask={() => setBulkTareaSheetOpen(true)}
+        onOpenBulkHistory={() => setBulkHistoriaSheetOpen(true)} // Connected
         onSuccess={() => {
           setSelectedIds([])
           loadPlantas()
@@ -208,6 +207,7 @@ export function PlantasContent({ initialPlantas, generos, subgeneros }: PlantasC
         }}
       />
 
+      {/* Single History Sheet */}
       <HistoriaClinicaSheet
         open={historiaSheetOpen}
         onOpenChange={(open) => {
@@ -215,10 +215,20 @@ export function PlantasContent({ initialPlantas, generos, subgeneros }: PlantasC
           if (!open) setSelectedPlantaForHistoria(null)
         }}
         historia={null}
-        idPlanta={selectedPlantaForHistoria?.id_planta || 0}
-        plantas={[]}
-        allowPlantaSelection={false}
+        defaultPlantaId={selectedPlantaForHistoria?.id_planta || 0}
         onSuccess={handleHistoriaSuccess}
+      />
+
+      {/* Bulk History Sheet */}
+      <HistoriaClinicaSheet
+        open={bulkHistoriaSheetOpen}
+        onOpenChange={setBulkHistoriaSheetOpen}
+        plantaIds={selectedIds}
+        onSuccess={() => {
+          setSelectedIds([])
+          loadPlantas()
+          setBulkHistoriaSheetOpen(false)
+        }}
       />
 
       {/* Hidden form for the "Nueva Planta" button */}

@@ -2,9 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   experimental: {
-    // Fix para el warning de turbopack
-    // @ts-expect-error - Turbopack config might not be typed yet
-    turbopack: {},
+
     optimizePackageImports: [
       'lucide-react',
       'date-fns',

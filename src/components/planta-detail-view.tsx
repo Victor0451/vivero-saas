@@ -22,7 +22,9 @@ import {
   ImageIcon,
   Plus,
   CheckSquare,
-  QrCode
+  QrCode,
+  Activity,
+  Download
 } from 'lucide-react'
 import { getPlantaByIdWithResponse, softDeletePlanta } from '@/app/actions/plantas'
 import { getHistoriaClinicaByPlanta } from '@/app/actions/historia-clinica'
@@ -30,21 +32,30 @@ import { getTareas } from '@/app/actions/tareas'
 import { getGeneros } from '@/app/actions/generos'
 import { getMacetas } from '@/app/actions/macetas'
 import { showToast } from '@/lib/toast'
-import type { PlantaConDetalles, HistoriaClinica, Tarea, GeneroPlanta, Maceta } from '@/types'
+import { formatDateUTC } from '@/lib/utils'
 import { PlantaSheet } from './planta-sheet'
 import { DeletePlantaDialog } from './delete-planta-dialog'
 import { HistoriaClinicaTimeline } from './historia-clinica-timeline'
 import { HistoriaClinicaSheet } from './historia-clinica-sheet'
 import { TareaSheet } from './tarea-sheet'
 import { PlantaQRLabel } from './planta-qr-label'
+import { ShareCaseDialog } from './share-case-dialog'
+import { AddFotoDialog } from './add-foto-dialog'
+import { generateClinicalReport } from '@/lib/pdf-generator'
 
+// ... existing imports
+import { PlantaFotosGallery } from './planta-fotos-gallery'
+import { getFotosPlanta } from '@/app/actions/fotos'
 import { HistoriaClinicaFilters, type FilterState } from './historia-clinica-filters'
+import type { PlantaConDetalles, HistoriaClinica, Tarea, GeneroPlanta, Maceta, FotoPlanta } from '@/types'
 
 export interface PlantaDetailViewProps {
   id: number
 }
 
 export function PlantaDetailView({ id }: PlantaDetailViewProps) {
+
+
   const router = useRouter()
   const [planta, setPlanta] = useState<PlantaConDetalles | null>(null)
   const [loading, setLoading] = useState(true)
@@ -55,8 +66,11 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
   const [tareas, setTareas] = useState<Tarea[]>([])
   const [generos, setGeneros] = useState<GeneroPlanta[]>([])
   const [macetas, setMacetas] = useState<Maceta[]>([])
+  const [fotos, setFotos] = useState<FotoPlanta[]>([])
+
   const [historiaSheetOpen, setHistoriaSheetOpen] = useState(false)
   const [tareaSheetOpen, setTareaSheetOpen] = useState(false)
+  const [addFotoOpen, setAddFotoOpen] = useState(false)
   const [editingHistoria, setEditingHistoria] = useState<HistoriaClinica | null>(null)
   const [editingTarea, setEditingTarea] = useState<Tarea | null>(null)
   const [qrLabelOpen, setQrLabelOpen] = useState(false)
@@ -80,6 +94,15 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
     }
   }, [id])
 
+  const loadFotos = useCallback(async () => {
+    try {
+      const data = await getFotosPlanta(id)
+      setFotos(data)
+    } catch (err) {
+      console.error('Error loading fotos:', err)
+    }
+  }, [id])
+
   const loadHistoriaClinica = useCallback(async () => {
     try {
       const data = await getHistoriaClinicaByPlanta(id)
@@ -100,7 +123,8 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
         // Cargar historial clínico y tareas relacionadas
         await Promise.all([
           loadHistoriaClinica(),
-          loadTareas()
+          loadTareas(),
+          loadFotos()
         ])
       } else {
         setError(result.message === 'Planta no encontrada' ? 'No tienes permiso para ver esta planta o no existe.' : (result.message || 'Error al cargar la planta'))
@@ -111,7 +135,7 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
     } finally {
       setLoading(false)
     }
-  }, [id, loadHistoriaClinica, loadTareas])
+  }, [id, loadHistoriaClinica, loadTareas, loadFotos])
 
   useEffect(() => {
     loadPlanta()
@@ -300,6 +324,14 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
     if (historyFilters.fechaEnd && new Date(item.fecha) > new Date(historyFilters.fechaEnd)) return false;
 
     return true;
+  }).sort((a, b) => {
+    // Sort by Date DESC
+    const timeA = new Date(a.fecha).getTime()
+    const timeB = new Date(b.fecha).getTime()
+    if (timeA !== timeB) return timeB - timeA
+
+    // Secondary Sort by ID DESC (Newest created first)
+    return b.id_historia - a.id_historia
   });
 
   const activeFiltersCount = [
@@ -328,6 +360,7 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
         </div>
 
         <div className="flex items-center gap-2">
+          <ShareCaseDialog idPlanta={planta.id_planta} plantName={planta.nombre} />
           <Button variant="outline" onClick={handleEdit}>
             <Edit className="w-4 h-4 mr-2" />
             Editar
@@ -346,37 +379,72 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
       {/* Content */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Image Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ImageIcon className="w-5 h-5" />
-              Imagen
+        {/* Bitácora Visual Section */}
+        <Card className="flex flex-col h-full bg-card/50 backdrop-blur-sm border-muted/60 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 border-b border-border/40">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold">
+              <div className="p-1.5 bg-primary/10 rounded-md">
+                <ImageIcon className="w-4 h-4 text-primary" />
+              </div>
+              Bitácora Visual
             </CardTitle>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setAddFotoOpen(true)}
+              className="h-8 px-3 text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 border-0"
+            >
+              <Plus className="w-3.5 h-3.5 mr-1.5" />
+              Agregar
+            </Button>
           </CardHeader>
-          <CardContent>
-            {planta.image_url ? (
-              <div className="aspect-square relative rounded-lg overflow-hidden bg-muted">
-                <img
-                  src={planta.image_url}
-                  alt={planta.nombre}
-                  className="h-full w-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none'
-                    e.currentTarget.parentElement?.querySelector('.fallback')?.classList.remove('hidden')
-                  }}
-                />
-                <div className="fallback hidden absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted to-muted/50 text-muted-foreground/30">
-                  <ImageIcon className="w-12 h-12" />
+          <CardContent className="pt-4 space-y-6">
+            {/* Foto Principal Actual */}
+            <div className="space-y-2">
+              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Portada Actual</h4>
+              {planta.image_url ? (
+                <div className="aspect-video w-full relative rounded-xl overflow-hidden border border-border/50 shadow-sm group">
+                  <img
+                    src={planta.image_url}
+                    alt={planta.nombre}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                      e.currentTarget.parentElement?.querySelector('.fallback')?.classList.remove('hidden')
+                    }}
+                  />
+                  <div className="fallback hidden absolute inset-0 flex items-center justify-center bg-muted">
+                    <ImageIcon className="w-10 h-10 text-muted-foreground/40" />
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
-              </div>
-            ) : (
-              <div className="aspect-square flex items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/25">
-                <div className="text-center">
-                  <ImageIcon className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">Sin imagen</p>
+              ) : (
+                <div className="aspect-video w-full flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-muted-foreground/10 bg-muted/30">
+                  <ImageIcon className="w-10 h-10 text-muted-foreground/30 mb-2" />
+                  <p className="text-xs text-muted-foreground/60 font-medium">Sin portada asignada</p>
                 </div>
+              )}
+            </div>
+
+            <Separator className="bg-border/40" />
+
+            {/* Galería (Línea de Tiempo) */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Línea de Tiempo</h4>
+                <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+                  {fotos.length} fotos
+                </span>
               </div>
-            )}
+              <PlantaFotosGallery
+                fotos={fotos}
+                idPlanta={id}
+                onUpdate={() => {
+                  loadFotos()
+                  loadPlanta() // Para actualizar la portada si cambió
+                }}
+              />
+            </div>
           </CardContent>
         </Card>
 
@@ -445,11 +513,7 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Fecha de compra</p>
                   <p className="text-sm">
-                    {new Date(planta.fecha_compra).toLocaleDateString('es-ES', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
+                    {formatDateUTC(planta.fecha_compra, "dd 'de' MMMM 'de' yyyy")}
                   </p>
                 </div>
               )}
@@ -458,11 +522,7 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Fecha de transplante</p>
                   <p className="text-sm">
-                    {new Date(planta.fecha_transplante).toLocaleDateString('es-ES', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
+                    {formatDateUTC(planta.fecha_transplante, "dd 'de' MMMM 'de' yyyy")}
                   </p>
                 </div>
               )}
@@ -489,20 +549,47 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
 
       {/* Historial Clínico */}
       <div className="mt-8">
-        <HistoriaClinicaFilters
-          onFilterChange={setHistoryFilters}
-          activeFiltersCount={activeFiltersCount}
-        />
-        <div className="flex justify-end mb-4">
-          <Button size="sm" onClick={handleAddHistoriaClinica}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo Registro
-          </Button>
-        </div>
-        <HistoriaClinicaTimeline
-          historias={filteredHistory}
-          onEdit={handleEditHistoriaClinica}
-        />
+        <Card className="border-l-4 border-l-indigo-500 shadow-sm">
+          <CardHeader className="border-b bg-muted/40 pb-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <div className="p-2 bg-indigo-100 rounded-md">
+                  <Activity className="h-5 w-5 text-indigo-600" />
+                </div>
+                Historial Clínico
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => generateClinicalReport(planta, filteredHistory)}
+                  className="hidden sm:flex bg-indigo-100 hover:bg-indigo-200 text-indigo-700 border border-indigo-200 shadow-sm"
+                  title="Descargar Informe PDF"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  PDF
+                </Button>
+                <Button size="sm" onClick={handleAddHistoriaClinica} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-all hover:scale-105">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nuevo Registro
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <HistoriaClinicaFilters
+              onFilterChange={setHistoryFilters}
+              activeFiltersCount={activeFiltersCount}
+            />
+
+            <div className="relative pl-2">
+              <HistoriaClinicaTimeline
+                historias={filteredHistory}
+                onEdit={handleEditHistoriaClinica}
+              />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Tareas */}
@@ -602,7 +689,7 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
         open={historiaSheetOpen}
         onOpenChange={setHistoriaSheetOpen}
         historia={editingHistoria}
-        idPlanta={id}
+        defaultPlantaId={id}
         plantas={planta ? [{
           id_planta: planta.id_planta,
           nombre: planta.nombre,
@@ -626,6 +713,16 @@ export function PlantaDetailView({ id }: PlantaDetailViewProps) {
         open={qrLabelOpen}
         onOpenChange={setQrLabelOpen}
         planta={planta}
+      />
+
+      <AddFotoDialog
+        open={addFotoOpen}
+        onOpenChange={setAddFotoOpen}
+        idPlanta={id}
+        onSuccess={() => {
+          loadFotos()
+          loadPlanta()
+        }}
       />
     </div>
   )

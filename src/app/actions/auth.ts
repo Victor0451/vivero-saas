@@ -34,6 +34,9 @@ export async function loginAction(formData: FormData) {
 }
 
 export async function registerAction(formData: FormData) {
+  // ⛔ REGISTRO DESHABILITADO TEMPORALMENTE
+  redirect('/login?error=registration_closed')
+
   const supabase = await createClient()
 
   const email = formData.get('email') as string
@@ -98,4 +101,26 @@ export async function logoutAction() {
   const supabase = await createClient()
   await supabase.auth.signOut()
   redirect('/login')
+}
+
+export async function loginDemoAction(formData: FormData) {
+  const supabase = await createClient()
+
+  // Credenciales Hardcodeadas para la Demo (En producción usar ENV vars)
+  const email = 'demo@vivero.com'
+  const password = 'demo12345678' // Contraseña de muestra
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  })
+
+  if (error || !data.session) {
+    console.error('Demo login error:', error?.message)
+    redirect('/login?error=demo_unavailable')
+  }
+
+  // Verificar si ya está expirado o algo así? No, Supabase maneja eso.
+  const redirectTo = (formData.get('redirectTo') as string) || '/dashboard'
+  redirect(redirectTo)
 }

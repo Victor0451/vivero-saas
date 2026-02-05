@@ -17,7 +17,7 @@ export async function uploadPlantImage(file: File, tenantId: string, plantId?: n
       .from(BUCKET_NAME)
       .upload(fileName, file, {
         cacheControl: '3600',
-        upsert: false
+        upsert: true // Allow overwriting for main image
       })
 
     if (error) {
@@ -32,6 +32,36 @@ export async function uploadPlantImage(file: File, tenantId: string, plantId?: n
     return { success: true, url: urlData.publicUrl }
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Error desconocido al subir imagen'
+    return { success: false, error: message }
+  }
+}
+
+export async function uploadPlantGalleryPhoto(file: File, tenantId: string, plantId: number): Promise<{ success: boolean; url?: string; path?: string; error?: string }> {
+  try {
+    const supabase = createClient()
+    const fileExt = file.name.split('.').pop()
+    const uniqueId = Math.random().toString(36).substring(2, 15)
+    const timestamp = Date.now()
+    const fileName = `${tenantId}/${plantId}/gallery/${timestamp}_${uniqueId}.${fileExt}`
+
+    const { error, data } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false
+      })
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    const { data: urlData } = supabase.storage
+      .from(BUCKET_NAME)
+      .getPublicUrl(fileName)
+
+    return { success: true, url: urlData.publicUrl, path: data?.path }
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Error desconocido al subir foto de galería'
     return { success: false, error: message }
   }
 }
