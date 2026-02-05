@@ -221,11 +221,11 @@ export default function HistorialClinicoPage() {
       <HistoriaClinicaSheet
         open={sheetOpen}
         onOpenChange={setSheetOpen}
-        idPlanta={selectedPlantaId || plantas[0]?.id_planta || 0}
+        defaultPlantaId={selectedPlantaId || plantas[0]?.id_planta || 0}
         plantas={plantas}
         generos={generos}
         macetas={macetas}
-        allowPlantaSelection={true}
+
         onSuccess={handleSuccess}
       />
     </div >
