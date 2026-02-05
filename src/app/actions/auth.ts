@@ -58,7 +58,7 @@ export async function registerAction(formData: FormData) {
   })
 
   if (error) {
-    console.error('Registration error:', error.message)
+    console.error('Registration error:', error?.message)
     redirect('/register?error=registration_failed')
   }
 
@@ -85,7 +85,7 @@ export async function registerAction(formData: FormData) {
       await supabase
         .from('users')
         .insert({
-          id_user: data.user.id,
+          id_user: data.user!.id,
           id_tenant: tenant.id_tenant,
           nombre: nombre,
           rol: 'admin',
